@@ -1,0 +1,3 @@
+humanize
+aiohttp[speedups]
+git+https://github.com/Rapptz/discord.py@master#egg=discord.py[voice]

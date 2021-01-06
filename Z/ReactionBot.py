@@ -44,6 +44,9 @@ class ReactionBotBase(commands.Bot):
         return self.emoji_mapping.get(query)
 
     async def on_raw_reaction_add(self, payload):
+        await self.process_reaction_commands(payload)
+
+    async def process_reaction_commands(self, payload):
         if str(payload.emoji) != self.command_emoji:
             return
         g_id = payload.guild_id

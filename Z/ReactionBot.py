@@ -119,15 +119,17 @@ class ReactionBotBase(commands.Bot):
             await self._mc.acquire(context)
         except commands.MaxConcurrencyReached:
             return False
-        try:
-            await self.http.add_reaction(context.channel.id, context.message.id, self.listening_emoji)
-        except discord.HTTPException:
-            pass
+        if self.listening_emoji:
+            try:
+                await self.http.add_reaction(context.channel.id, context.message.id, self.listening_emoji)
+            except discord.HTTPException:
+                pass
         return True
 
     async def r_after_invoke(self, context):
         await self._mc.release(context)
-        await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
+        if self.listening_emoji:
+            await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
 
 
     def command(self, emojis, *args, **kwargs):

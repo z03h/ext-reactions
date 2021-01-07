@@ -2,3 +2,4 @@ env
 definitelynotmytoken
 __pycache__
 My*
+cogs/*

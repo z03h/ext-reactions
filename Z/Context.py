@@ -20,6 +20,7 @@ class ReactionContext(commands.Context):
         self.kwargs = {}
 
     def set_command(self, command, emoji):
+        self.prefix = self.bot.command_emoji
         self.invoked_with = emoji
         self.command = command
         self.args = (command.cog, self) if command.cog else (self,)

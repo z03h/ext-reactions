@@ -1,3 +1,5 @@
+git+https://github.com/Rapptz/discord.py@master#egg=discord.py[voice]
+git+https://github.com/Rapptz/discord-ext-menus
 humanize
 aiohttp[speedups]
-git+https://github.com/Rapptz/discord.py@master#egg=discord.py[voice]
+jishaku

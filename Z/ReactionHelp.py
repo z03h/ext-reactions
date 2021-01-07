@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+from .ReactionCommand import ReactionCommand
+from .Context import ReactionContext
 
 class ReactionHelp(commands.DefaultHelpCommand):
     def __init__(self, *args, **kwargs):
@@ -11,37 +13,50 @@ class ReactionHelp(commands.DefaultHelpCommand):
     def get_ending_note(self):
         bot = self.context.bot
         return f"Bot that only works with emojis\n" \
-               f"React with {bot.command_emoji} to start listening\n" \
-               f"Add reactions to get the command you want. React {bot.command_emoji} to end the timer early"
+               f"React with {bot.command_emoji} to start \n" \
+               f"Add reactions to get the command you want. Remove {bot.command_emoji} to end the timer early"
 
     def add_indented_commands(self, commands, *, heading, max_size=None):
+        if isinstance(self.context, ReactionContext):
+            commands = [cmd for cmd in commands if isinstance(cmd, (ReactionCommand,_ReactionHelpCommandImpl))]
+
         if not commands:
             return
 
         self.paginator.add_line(f'__**{heading}**__')
-        max_size = max_size or self.get_max_size(commands)
+
+        def filter_regional(c):
+            if 0x1f1e6 <= ord(c) <= 0x1f1ff:
+                return c + '\u200b'
+            return c
 
         get_width = discord.utils._string_width
+
         for command in commands:
-            name = command.name
-            width = max_size - (get_width(name) - len(name))
-            entry = '{0}{1}={2 {3}'.format(self.indent * '\u200a',
-                                                    ','.join('\u200b'.join(emoji) for emoji in command.emojis),
-                                                    name,
+            if isinstance(command, (ReactionCommand, _ReactionHelpCommandImpl)):
+                formatted_emojis = []
+                for emoji in command.emojis:
+                    formatted_emojis.append(''.join(map(filter_regional, emoji)))
+                entry = '{0}{1}=**{2}** {3}'.format(self.indent * '\u200a',
+                                                    ','.join(formatted_emojis),
+                                                    command.name,
                                                     f'`{command.short_doc}`' if command.short_doc else '')
-            self.paginator.add_line(self.shorten_text(entry.strip()))
+                self.paginator.add_line(self.shorten_text(entry.strip()))
+            else:
+                entry = '{0}**{1}** {2}'.format(self.indent * '\u200a',
+                                                command.name,
+                                                f'`{command.short_doc}`' if command.short_doc else '')
+                self.paginator.add_line(self.shorten_text(entry))
 
-    async def command_callback(self, ctx):
-        await self.prepare_help_command(ctx, None)
-        bot = ctx.bot
+    async def command_callback(self, ctx, *, command=None):
+        if command:
+            await self.prepare_help_command(ctx, None)
+            bot = ctx.bot
 
-        mapping = self.get_bot_mapping()
-        return await self.send_bot_help(mapping)
-
-    def copy(self):
-        obj = self.__class__(*self.__original_args__, **self.__original_kwargs__)
-        obj._command_impl = self._command_impl
-        return obj
+            mapping = self.get_bot_mapping()
+            return await self.send_bot_help(mapping)
+        else:
+            return await super().command_callback(ctx, command=command)
 
     def _add_to_bot(self, bot):
         command = _ReactionHelpCommandImpl(self, **self.command_attrs)
@@ -59,6 +74,8 @@ class _ReactionHelpCommandImpl(commands.help._HelpCommandImpl):
         self.emojis = [inject.emojis] if isinstance(inject.emojis, str) else inject.emojis
 
     async def prepare(self, ctx):
+        if not isinstance(ctx, ReactionContext):
+            return await super().prepare(ctx)
         self._injected = injected = self._original.copy()
         injected.context = ctx
         self.callback = injected.command_callback
@@ -69,7 +86,15 @@ class _ReactionHelpCommandImpl(commands.help._HelpCommandImpl):
                 self.on_error = self._on_error_cog_implementation
             else:
                 self.on_error = on_error
+        ctx.command = self
+        if not await self.can_run(ctx):
+            raise CheckFailure('The check functions for command {0.qualified_name} failed.'.format(self))
+        self._prepare_cooldowns(ctx)
+
+        if self._max_concurrency is not None:
+            await self._max_concurrency.acquire(ctx)
+        await self.call_before_hooks(ctx)
 
     def copy(self):
-        ret = self.__class__(self.emojis, self.callback, **self.__original_kwargs__)
+        ret = self.__class__(self.callback, **self.__original_kwargs__)
         return self._ensure_assignment_on_copy(ret)

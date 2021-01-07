@@ -6,7 +6,7 @@ from discord.ext import commands
 import humanize
 
 from Z.ReactionCommand import reaction_command
-class Test(commands.Cog):
+class Test(commands.Cog, command_attrs=dict(case_insensitive=True)):
     def __init__(self, bot):
         self.bot = bot
 
@@ -21,18 +21,11 @@ class Test(commands.Cog):
             minimum = 'months'
         return humanize.precisedelta(td, minimum_unit=minimum, format="%.0f").replace(' and', '').replace(',', '')
 
-    @reaction_command(['\U0001f1fa\U0001f1ee', '\U0001f1fa\U0001f1fa\U0001f1ee'])
+    @reaction_command(['\U0001f1fa\U0001f1ee'])
     @commands.guild_only()
     async def userinfo(self, ctx):
         """gets user id, create/join date, roles"""
-        if ctx.invoked_with=='\U0001f1fa\U0001f1ee':
-            user = ctx.author
-        else:
-            m = await ctx.channel.fetch_message(ctx.message.id)
-            user = ctx.guild.get_member(m.author.id)
-        if not user:
-            await ctx.send('No member found')
-            return
+        user = ctx.author
         now = datetime.utcnow()
 
         av_url = str(user.avatar_url_as(static_format='png'))
@@ -67,7 +60,7 @@ class Test(commands.Cog):
         else:
             booster = ''
         bot_text = user.bot and ' <:bot1:721808209395843143><:bot2:721808220234055680>' or ''
-        desc = '> {}{} \u00a0 \u00a0{}{}'.format(user.mention, bot_text, ''.join(badge_text), booster)
+        desc = '> {}{} \u00a0\u00a0{}{}'.format(user.mention, bot_text, ''.join(badge_text), booster)
         embed.description = desc
 
         # datetimes for joined guild / created account
@@ -100,7 +93,7 @@ class Test(commands.Cog):
         sortmembers = sorted(ctx.guild.members, key=lambda m: m.joined_at)
         footertext = 'Member# {:,}  •  User ID: {}'.format(sortmembers.index(user)+1, user.id)
         embed.set_footer(text=footertext, icon_url=user.avatar_url_as(static_format='png', size=32))
-        await ctx.send(content=ctx.author.mention, embed=embed)
+        await ctx.send(embed=embed)
 
     @reaction_command('\U0001f1f8\U0001f1ee')
     @commands.guild_only()
@@ -132,8 +125,8 @@ class Test(commands.Cog):
         embed.set_footer(text='Server ID: {}'.format(seaver.id), icon_url=seaver.icon_url_as(static_format='png', size=32))
         await ctx.send(embed=embed)
 
-    @reaction_command('\U0001f914')
-    @commands.cooldown(1,5, commands.BucketType.user)
+    @reaction_command('\U0001f44c')
+    @commands.is_nsfw()
     async def test(self, ctx):
         """test command"""
         m = await ctx.send('send nudes')

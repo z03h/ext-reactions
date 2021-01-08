@@ -4,11 +4,11 @@ import discord
 class ReactionCommandMixin:
     """docstring for ClassName"""
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         emojis = kwargs.get('emojis')
         if not emojis:
-            raise ValueError(f'Emojis cannot be empty for {self.name}')
+            raise ValueError(f'emojis cannot be empty for {self.name}')
         self.emojis = [emojis] if isinstance(emojis, str) else emojis
-        super().__init__(*args, **kwargs)
 
     async def _parse_arguments(self, ctx):
         if ctx.reaction_command:
@@ -35,9 +35,10 @@ class ReactionCommandMixin:
                 raise discord.ClientException(fmt.format(self))
 
             for name, param in iterator:
+                arg = None if param.default is param.empty else param.default
                 if param.kind == param.KEYWORD_ONLY:
-                    kwargs[name] = None
+                    kwargs[name] = arg
                 else:
-                    args.append(None)
+                    args.append(arg)
         else:
             await super()._parse_arguments(ctx)

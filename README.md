@@ -10,7 +10,7 @@ Bot that can listen to reactions for commands.
 Added `ReactionBotBase` things
 - `emoji_mapping` is a dict of `emoji: ReactionCommand`
 - `get_emoji_command(str)` gets which command emojis `str` map to
-- `process_reaction_commands(payload)` creates and invokes a `ReactionContext` if `command_emoji` is reacted
+- `process_reaction_commands(payload, cls=ReactionContext)` creates and invokes Context of type `cls` if `command_emoji` is reacted
 - `wait_emoji_stream(user_id, msg_id)` waits for reactions from user on message and returns them as a string
 
 1. Listens for `command_emoji` added, then waits_for reactions from that user on that message
@@ -36,7 +36,7 @@ You can use multiple emojis for each command
   - default `ReactionHelp` emoji is `'\N{REGIONAL INDICATOR SYMBOL LETTER H}'`
 - cut down `ReactionContext` compared to normal `Context`. Doesn't have the full `message` and has broken methods because of that
   - `ReactionContext.message` has `id`, `channel`, `guild` attributes. `author` is set to the user who added reactions
-    -`author` will be a `discord.Object` with id of user who reacted if `get_member` or `get_user` fail
+    - `author` will be a `discord.Object` with id of user who reacted if `get_member` or `get_user` fail
     - you can get the message the reactions were added to by fetching `ReactionContext.message.id` from `ReactionContext.channel`
-  - most methods like `ReactionContext.send`/`ReactionContext.channel` should still work
+  - most methods/attributes like `ReactionContext.send`/`ReactionContext.channel` should still work
   - check `reaction_command` attribute on `Context` and `ReactionContext` if invoke from reactions or message

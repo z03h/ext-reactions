@@ -88,7 +88,7 @@ class ReactionBotBase(commands.Bot):
     async def on_raw_reaction_add(self, payload):
         await self.process_reaction_commands(payload)
 
-    async def process_reaction_commands(self, payload):
+    async def process_reaction_commands(self, payload, *, cls=ReactionContext):
         if str(payload.emoji) != self.command_emoji:
             return
         g_id = payload.guild_id
@@ -103,7 +103,7 @@ class ReactionBotBase(commands.Bot):
             user = discord.Object(id=u_id)
         channel = self.get_channel(payload.channel_id) or discord.Object(id=payload.channel_id)
         #make a pseudo context
-        context = ReactionContext(self, payload.message_id, user, channel, guild)
+        context = cls(self, payload.message_id, user, channel)
         if await self.r_before_invoke(context):
             try:
                 emoji = await self.wait_emoji_stream(u_id, payload.message_id)
@@ -123,9 +123,10 @@ class ReactionBotBase(commands.Bot):
         for future in (pending or []):
             future.cancel()
 
-    async def wait_emoji_stream(self, user_id, msg_id):
-        def check(payload):
-            return payload.message_id == msg_id and payload.user_id == user_id
+    async def wait_emoji_stream(self, user_id, msg_id, *, check=None):
+        if not check:
+            def check(payload):
+                return payload.message_id == msg_id and payload.user_id == user_id
         command = []
         while True:
             tasks = (self.wait_for('raw_reaction_add', check=check),
@@ -186,8 +187,7 @@ class ReactionBotBase(commands.Bot):
 
 
 class ReactionCommand(ReactionCommandMixin, commands.Command):
-    def __init__(self, func, *args, **kwargs):
-        super().__init__(func, *args, **kwargs)
+    pass
 
 def reaction_command(emojis, name=None, cls=None, **attrs):
     if cls is None:

@@ -4,10 +4,9 @@ import asyncio
 import discord
 from discord.ext import commands
 
-from .Context import ReactionContext
-from .ReactionCommand import reaction_command
-from .ReactionHelp import ReactionHelp, _ReactionHelpCommandImpl
-
+from .ReactionHelp import ReactionHelp
+from .ReactionContext import ReactionContext
+from .ReactionCommand import ReactionCommandMixin
 
 class _EmojiInsensitiveDict(dict):
     def __init__(self, *args, **kwargs):
@@ -40,22 +39,21 @@ class _EmojiInsensitiveDict(dict):
 
 
 class ReactionBotBase(commands.Bot):
-    def __init__(self, command_emoji, listening_emoji, *args, **kwargs):
+    def __init__(self, command_prefix, command_emoji, listening_emoji, *args, **kwargs):
+        if not command_emoji:
+            raise ValueError('command_emoji must be a str')
+        if not listening_emoji:
+            raise ValueError('listening_emoji must be a str')
         self.command_emoji = command_emoji
         self.listening_emoji = listening_emoji
         kwargs.setdefault('help_command', ReactionHelp())
         self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('case_insensitive') else {}
-        super().__init__(command_prefix='...', *args, **kwargs)
+        super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self.listen_timeout = kwargs.get('timeout', 10)
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
-    async def on_message(self, message):
-        pass
-
     def add_command(self, command):
         try:
-            if any(self.command_emoji in emoji or self.listening_emoji in emoji for emoji in command.emojis):
-                raise ValueError(f'Command {command.name} emojis cannot contain command_emoji or listening_emoji')
             if any(emoji in self.emoji_mapping for emoji in command.emojis):
                 raise commands.CommandRegistrationError(' '.join(command.emojis))
             for emoji in command.emojis:
@@ -82,6 +80,11 @@ class ReactionBotBase(commands.Bot):
     def get_emoji_command(self, query):
         return self.emoji_mapping.get(query)
 
+    async def get_context(self, *args, **kwargs):
+        ctx = await super().get_context(*args, **kwargs)
+        ctx.reaction_command = False
+        return ctx
+
     async def on_raw_reaction_add(self, payload):
         await self.process_reaction_commands(payload)
 
@@ -94,18 +97,23 @@ class ReactionBotBase(commands.Bot):
             user = guild.get_member(u_id)
         else:
             user = self.get_user(u_id)
-        if not user or user.bot:
+        if user and user.bot:
             return
+        if not user:
+            user = discord.Object(id=u_id)
         channel = self.get_channel(payload.channel_id) or discord.Object(id=payload.channel_id)
         #make a pseudo context
         context = ReactionContext(self, payload.message_id, user, channel, guild)
         if await self.r_before_invoke(context):
-            emoji = await self.wait_emoji_stream(u_id, payload.message_id)
-            if emoji:
-                command = self.get_emoji_command(emoji)
-                if command:
-                    context.set_command(command, emoji)
-                    await self.invoke(context)
+            try:
+                emoji = await self.wait_emoji_stream(u_id, payload.message_id)
+                if emoji:
+                    command = self.get_emoji_command(emoji)
+                    if command:
+                        context.set_command(self.command_emoji, command, emoji)
+                        await self.invoke(context)
+            except Exception:
+                pass
             await self.r_after_invoke(context)
 
     def _cleanup_tasks(self, done, pending):
@@ -168,10 +176,26 @@ class ReactionBotBase(commands.Bot):
             except Exception:
                 pass
 
-    def emoji_command(self, emojis, *args, **kwargs):
+    def reaction_command(self, emojis, *args, **kwargs):
         def decorator(func):
             kwargs.setdefault('parent', self)
             result = reaction_command(emojis, *args, **kwargs)(func)
             self.add_command(result)
             return result
         return decorator
+
+
+class ReactionCommand(ReactionCommandMixin, commands.Command):
+    def __init__(self, func, *args, **kwargs):
+        super().__init__(func, *args, **kwargs)
+
+def reaction_command(emojis, name=None, cls=None, **attrs):
+    if cls is None:
+        cls = ReactionCommand
+
+    def decorator(func):
+        if isinstance(func, commands.Command):
+            raise TypeError('Callback is already a command.')
+        return cls(func, name=name, emojis=emojis, **attrs)
+
+    return decorator

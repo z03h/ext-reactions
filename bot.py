@@ -2,14 +2,15 @@
 import discord
 from discord.ext import commands
 
-from Z import ReactionBot, Context, MyBot
-from Z.ReactionCommand import reaction_command
+from Z import MyBot
+from Z.ReactionCore import reaction_command
 
 intents = discord.Intents(members=True, reactions=True,
                           guilds=True, voice_states=True,
                           messages=True)
 start_activity = discord.Activity(type=3, name='for \U0001f916')
-bot = MyBot.RBot(command_emoji='\U0001f916',
+bot = MyBot.RBot(command_prefix ='zz',
+                 command_emoji='\U0001f916',
                  listening_emoji='\U000025b6\U0000fe0f',
                  intents=intents,
                  case_insensitive=True,
@@ -25,12 +26,12 @@ bot.load_extension('jishaku')
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
-@bot.emoji_command('\U0001f44b')
+@bot.reaction_command('\U0001f44b')
 async def hi(ctx):
     """says hi lmao"""
     await ctx.send(f'hello there {ctx.author.mention}')
 
-@bot.emoji_command('\U0000267b\U0000fe0f')
+@bot.reaction_command('\U0000267b\U0000fe0f')
 @commands.is_owner()
 async def reload(ctx):
     """reloads extensions"""
@@ -39,7 +40,7 @@ async def reload(ctx):
         bot.reload_extension(ext)
     await ctx.send("reloaded \U0001f44d")
 
-@bot.emoji_command('\U0000274c')
+@bot.reaction_command('\U0000274c')
 @commands.is_owner()
 async def close(ctx):
     """logs out, goodnight i love you"""

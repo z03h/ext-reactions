@@ -17,13 +17,12 @@ class ReactionContext(commands.Context):
         self.bot = bot
         self.message = _ProxyMessage(message_id, author, channel, guild)
         self._state = author._state
-        self.kwargs = {}
 
-    def set_command(self, command, emoji):
-        self.prefix = self.bot.command_emoji
+    def set_command(self, prefix, command, emoji):
+        self.prefix = prefix
         self.invoked_with = emoji
         self.command = command
-        self.args = (command.cog, self) if command.cog else (self,)
+        self.reaction_command = True
 
     async def reply(self, *args, **kwargs):
         try:

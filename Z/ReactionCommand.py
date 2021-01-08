@@ -1,36 +1,43 @@
 import discord
-from discord.ext import commands
-
-from .Context import ReactionContext
 
 
-class ReactionCommand(commands.Command):
-    def __init__(self, func, *args, **kwargs):
-        super().__init__(func, *args, **kwargs)
+class ReactionCommandMixin:
+    """docstring for ClassName"""
+    def __init__(self, *args, **kwargs):
         emojis = kwargs.get('emojis')
         if not emojis:
             raise ValueError(f'Emojis cannot be empty for {self.name}')
         self.emojis = [emojis] if isinstance(emojis, str) else emojis
+        super().__init__(*args, **kwargs)
 
-    async def prepare(self, ctx):
-        if isinstance(ctx, ReactionContext):
-            ctx.command = self
-            if not await self.can_run(ctx):
-                raise CheckFailure('The check functions for command {0.qualified_name} failed.'.format(self))
-            self._prepare_cooldowns(ctx)
+    async def _parse_arguments(self, ctx):
+        if ctx.reaction_command:
+            ctx.args = [ctx] if self.cog is None else [self.cog, ctx]
+            ctx.kwargs = {}
+            args = ctx.args
+            kwargs = ctx.kwargs
+            iterator = iter(self.params.items())
 
-            if self._max_concurrency is not None:
-                await self._max_concurrency.acquire(ctx)
-            return await self.call_before_hooks(ctx)
-        return await super().prepare(ctx)
+            if self.cog is not None:
+                # we have 'self' as the first parameter so just advance
+                # the iterator and resume parsing
+                try:
+                    next(iterator)
+                except StopIteration:
+                    fmt = 'Callback for {0.name} command is missing "self" parameter.'
+                    raise discord.ClientException(fmt.format(self))
 
-def reaction_command(emoji, name=None, cls=None, **attrs):
-    if cls is None:
-        cls = ReactionCommand
+            # next we have the 'ctx' as the next parameter
+            try:
+                next(iterator)
+            except StopIteration:
+                fmt = 'Callback for {0.name} command is missing "ctx" parameter.'
+                raise discord.ClientException(fmt.format(self))
 
-    def decorator(func):
-        if isinstance(func, commands.Command):
-            raise TypeError('Callback is already a command.')
-        return cls(func, name=name, emojis=emoji, **attrs)
-
-    return decorator
+            for name, param in iterator:
+                if param.kind == param.KEYWORD_ONLY:
+                    kwargs[name] = None
+                else:
+                    args.append(None)
+        else:
+            await super()._parse_arguments(ctx)

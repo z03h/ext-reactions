@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 
-from .ReactionContext import ReactionContext
-from .ReactionCommand import ReactionCommandMixin
+from .reactioncore import ReactionCommandMixin
+from .reactioncontext import ReactionContext
 
 class ReactionHelp(commands.DefaultHelpCommand):
     def __init__(self, *args, **kwargs):
@@ -15,7 +15,7 @@ class ReactionHelp(commands.DefaultHelpCommand):
         bot = self.context.bot
         return f"Bot that works with reactions and emojis\n" \
                f"React with {bot.command_emoji} to start a command\n" \
-               f"Add reactions to get the command you want. Remove {bot.command_emoji} to end the timer early"
+               f"Add reactions to get the command you want. Remove {bot.command_emoji} to start the command"
 
     def add_indented_commands(self, commands, *, heading, max_size=None):
         if not commands:

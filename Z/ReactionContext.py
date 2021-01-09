@@ -19,8 +19,7 @@ class ReactionContext(commands.Context):
         self.message = _ProxyMessage(payload.message_id, author, channel, channel.guild)
         self._state = author._state
         self.reaction_command = True
-
-    def set_command(self, prefix, command, emoji):
-        self.prefix = prefix
-        self.invoked_with = emoji
-        self.command = command
+        self.remove_after = []
+        self.command = None
+        self.prefix = None
+        self.invoked_with = None

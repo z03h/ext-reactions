@@ -7,11 +7,11 @@ Bot that can listen to reactions for commands.
 - `command_emoji` is similar to command prefix, all command invokes must start with this emoji
 - `listening_emoji` is the emoji to let the user know the bot is listening for emojis
 - `timeout` is the time in seconds to listen for emojis after `command_emoji`. Timer will reset after each added emoji
-Added `ReactionBotBase` things
+##### Added `ReactionBotBase` things
 - `emoji_mapping` is a dict of `emoji: ReactionCommand`
 - `get_emoji_command(str)` gets which command emojis `str` map to
-- `process_reaction_commands(payload, cls=ReactionContext)` creates and invokes Context of type `cls` if `command_emoji` is reacted
-- `wait_emoji_stream(user_id, msg_id)` waits for reactions from user on message and returns them as a string
+- `process_reaction_commands(payload)` invokes commands if `command_emoji` is reacted
+- `wait_emoji_stream(user_id, msg_id, *, check=None)` waits for reactions from user on message and returns them as a string
 
 1. Listens for `command_emoji` added, then waits_for reactions from that user on that message
 2. Will listen for raw reaction add and remove

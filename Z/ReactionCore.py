@@ -1,12 +1,8 @@
 import re
-import asyncio
 
 import discord
 from discord.ext import commands
 
-from .ReactionHelp import ReactionHelp
-from .ReactionContext import ReactionContext
-from .ReactionCommand import ReactionCommandMixin
 
 class _EmojiInsensitiveDict(dict):
     def __init__(self, *args, **kwargs):
@@ -38,19 +34,58 @@ class _EmojiInsensitiveDict(dict):
         super().__setitem__(self._clean(k), v)
 
 
-class ReactionBotBase(commands.Bot):
-    def __init__(self, command_prefix, command_emoji, listening_emoji, *args, **kwargs):
-        if not command_emoji:
-            raise ValueError('command_emoji must be a str')
-        if not listening_emoji:
-            raise ValueError('listening_emoji must be a str')
-        self.command_emoji = command_emoji
-        self.listening_emoji = listening_emoji
-        kwargs.setdefault('help_command', ReactionHelp())
+class ReactionCommandMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        emojis = kwargs.get('emojis')
+        if not emojis:
+            raise ValueError(f'emojis cannot be empty for {self.name}')
+        self.invoke_with_message = kwargs.get('invoke_with_message', True)
+        self.emojis = [emojis] if isinstance(emojis, str) else emojis
+
+    async def _parse_arguments(self, ctx):
+        try:
+            is_reaction = ctx.reaction_command
+        except AttributeError:
+            is_reaction = False
+
+        if is_reaction:
+            ctx.args = [ctx] if self.cog is None else [self.cog, ctx]
+            ctx.kwargs = {}
+            args = ctx.args
+            kwargs = ctx.kwargs
+            iterator = iter(self.params.items())
+
+            if self.cog is not None:
+                # we have 'self' as the first parameter so just advance
+                # the iterator and resume parsing
+                try:
+                    next(iterator)
+                except StopIteration:
+                    fmt = 'Callback for {0.name} command is missing "self" parameter.'
+                    raise discord.ClientException(fmt.format(self))
+
+            # next we have the 'ctx' as the next parameter
+            try:
+                next(iterator)
+            except StopIteration:
+                fmt = 'Callback for {0.name} command is missing "ctx" parameter.'
+                raise discord.ClientException(fmt.format(self))
+
+            for name, param in iterator:
+                arg = None if param.default is param.empty else param.default
+                if param.kind == param.KEYWORD_ONLY:
+                    kwargs[name] = arg
+                else:
+                    args.append(arg)
+        else:
+            await super()._parse_arguments(ctx)
+
+
+class ReactionGroupMixin:
+    def __init__(self, *args, **kwargs):
         self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('case_insensitive') else {}
-        super().__init__(command_prefix=command_prefix, *args, **kwargs)
-        self.listen_timeout = kwargs.get('timeout', 10)
-        self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
+        super().__init__(*args, **kwargs)
 
     def add_command(self, command):
         try:
@@ -77,121 +112,22 @@ class ReactionBotBase(commands.Bot):
             pass
         return cmd
 
-    def get_emoji_command(self, query):
-        return self.emoji_mapping.get(query)
-
-    async def get_context(self, *args, **kwargs):
-        ctx = await super().get_context(*args, **kwargs)
-        try:
-            ctx.reaction_command = False
-        except AttributeError:
-            pass
-        return ctx
-
-    async def on_raw_reaction_add(self, payload):
-        await self.process_reaction_commands(payload)
-
-    def get_reaction_context(self, payload, *, cls=ReactionContext):
-        g_id = payload.guild_id
-        u_id = payload.user_id
-        if guild:=self.get_guild(g_id):
-            user = guild.get_member(u_id)
-        else:
-            user = self.get_user(u_id)
-        if user and user.bot:
-            return
-        if not user:
-            user = discord.Object(id=u_id)
-        channel = self.get_channel(payload.channel_id) or discord.Object(id=payload.channel_id)
-        return cls(self, payload, user, channel)
-
-    async def process_reaction_commands(self, payload):
-        if str(payload.emoji) != self.command_emoji:
-            return
-        #make a pseudo context
-        context = self.get_reaction_context(payload)
-        if await self.reaction_before_invoke(context):
+    def get_reaction_command(self, name):
+        if ' ' not in name:
+            return self.emoji_mapping.get(name)
+        names = name.split(' ')
+        if not names:
+            return None
+        obj = self.emoji_mapping.get(names[0])
+        if not isinstance(obj, ReactionGroupMixin):
+            return obj
+        for name in names[1:]:
             try:
-                emoji = await self.wait_emoji_stream(payload.user_id, payload.message_id)
-                if emoji:
-                    command = self.get_emoji_command(emoji)
-                    if command:
-                        context.set_command(self.command_emoji, command, emoji)
-                        await self.invoke(context)
-            except Exception as e:
-                pass
-            finally:
-                await self.reaction_after_invoke(context)
+                obj = obj.emoji_mapping[name]
+            except (AttributeError, KeyError):
+                return None
+        return obj
 
-    def _cleanup_tasks(self, done, pending):
-        # cleanup tasks from emoji waiting
-        for future in (done or []):
-            future.exception()
-        for future in (pending or []):
-            future.cancel()
-
-    async def wait_emoji_stream(self, user_id, msg_id, *, check=None):
-        if not check:
-            def check(payload):
-                return payload.message_id == msg_id and payload.user_id == user_id
-        command = []
-        while True:
-            tasks = (self.wait_for('raw_reaction_add', check=check),
-                     self.wait_for('raw_reaction_remove', check=check))
-            done, pending = await asyncio.wait([asyncio.create_task(t) for t in tasks],
-                                               timeout=self.listen_timeout,
-                                               return_when=asyncio.FIRST_COMPLETED)
-            if done:
-                #user reacted
-                result = done.pop()
-                self._cleanup_tasks(done, pending)
-                try:
-                    payload = result.result()
-                except Exception:
-                    return None
-                emoji = str(payload.emoji)
-                if emoji == self.command_emoji:
-                    if command:
-                        return ''.join(command)
-                    else:
-                        return None
-                command.append(str(payload.emoji))
-            else:
-                #user stopped reacting, check if any reactions
-                self._cleanup_tasks(done, pending)
-                if command:
-                    return ''.join(command)
-                else:
-                    return None
-
-    async def reaction_before_invoke(self, context):
-        try:
-            await self._mc.acquire(context)
-        except commands.MaxConcurrencyReached:
-            return False
-        try:
-            await self.http.add_reaction(context.channel.id, context.message.id, self.listening_emoji)
-        except Exception:
-            pass
-        return True
-
-    async def reaction_after_invoke(self, context):
-        await self._mc.release(context)
-        if context.channel.permissions_for(context.me).manage_messages:
-            try:
-                await context.message.clear_reactions()
-            except discord.NotFound:
-                pass
-            except Exception:
-                try:
-                    await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
-                except Exception:
-                    pass
-        else:
-            try:
-                await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
-            except Exception:
-                pass
 
     def reaction_command(self, emojis, *args, **kwargs):
         def decorator(func):
@@ -201,9 +137,59 @@ class ReactionBotBase(commands.Bot):
             return result
         return decorator
 
+    def reaction_group(self, emojis, *args, **kwargs):
+        def decorator(func):
+            kwargs.setdefault('parent', self)
+            result = reaction_group(emojis, *args, **kwargs)(func)
+            self.add_command(result)
+            return result
+
+        return decorator
 
 class ReactionCommand(ReactionCommandMixin, commands.Command):
     pass
+
+
+class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
+    def __init__(self, *args, **kwargs):
+        self.invoke_without_command = kwargs.get('invoke_without_command', False)
+        super().__init__(*args, **kwargs)
+
+    async def invoke(self, ctx):
+        try:
+            reaction_command = ctx.reaction_command
+        except AttributeError:
+            reaction_command = False
+        if reaction_command:
+            ctx.invoked_subcommand = None
+            ctx.subcommand_passed = None
+            early_invoke = not self.invoke_without_command
+            if early_invoke:
+                await self.prepare(ctx)
+
+            view = ctx.view
+            previous = view.index
+            view.skip_ws()
+            trigger = view.get_word()
+
+            if trigger:
+                ctx.subcommand_passed = trigger
+                ctx.invoked_subcommand = self.get_reaction_command(trigger)
+
+            if early_invoke:
+                injected = commands.core.hooked_wrapped_callback(self, ctx, self.callback)
+                await injected(*ctx.args, **ctx.kwargs)
+
+            if trigger and ctx.invoked_subcommand:
+                ctx.invoked_with = trigger
+                await ctx.invoked_subcommand.invoke(ctx)
+            elif not early_invoke:
+                # undo the trigger parsing
+                view.index = previous
+                view.previous = previous
+                await super().invoke(ctx)
+        else:
+            await super().invoke(ctx)
 
 def reaction_command(emojis, name=None, cls=None, **attrs):
     if cls is None:
@@ -215,3 +201,7 @@ def reaction_command(emojis, name=None, cls=None, **attrs):
         return cls(func, name=name, emojis=emojis, **attrs)
 
     return decorator
+
+def reaction_group(emojis, name=None, cls=None, **attrs):
+    attrs.setdefault('cls', ReactionGroup)
+    return reaction_command(emojis, name=name, **attrs)

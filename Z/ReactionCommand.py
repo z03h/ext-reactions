@@ -2,16 +2,21 @@ import discord
 
 
 class ReactionCommandMixin:
-    """docstring for ClassName"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         emojis = kwargs.get('emojis')
         if not emojis:
             raise ValueError(f'emojis cannot be empty for {self.name}')
+        self.invoke_with_message = kwargs.get('invoke_with_message', True)
         self.emojis = [emojis] if isinstance(emojis, str) else emojis
 
     async def _parse_arguments(self, ctx):
-        if ctx.reaction_command:
+        try:
+            is_reaction = ctx.reaction_command
+        except AttributeError:
+            is_reaction = False
+
+        if is_reaction:
             ctx.args = [ctx] if self.cog is None else [self.cog, ctx]
             ctx.kwargs = {}
             args = ctx.args

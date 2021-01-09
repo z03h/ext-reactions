@@ -18,7 +18,7 @@ Added `ReactionBotBase` things
 3. After `timeout` seconds or user removes `command_emoji`, ends the wait_for
 4. Joins all the reactions into a single string and gets the command from `emoji_mapping`
 ***
-Create `ReactionCommand`s with `@reaction_command(emoji)` in cogs or `@bot.reaction_command([emoji1, emoji2])`.
+Create `ReactionCommand`'s with `@reaction_command(emoji)` in cogs or `@bot.reaction_command([emoji1, emoji2])`.
 
 You can use multiple emojis for each command
 

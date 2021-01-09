@@ -4,12 +4,14 @@ from discord.ext import commands
 
 from Z import MyBot
 from Z.ReactionCore import reaction_command
+from Z.ReactionHelp import ReactionHelp
+
 
 intents = discord.Intents(members=True, reactions=True,
                           guilds=True, voice_states=True,
                           messages=True)
 start_activity = discord.Activity(type=3, name='for \U0001f916')
-bot = MyBot.RBot(command_prefix ='zz',
+bot = MyBot.RBot(command_prefix =('zz ', 'zz'),
                  command_emoji='\U0001f916',
                  listening_emoji='\U000025b6\U0000fe0f',
                  intents=intents,
@@ -17,6 +19,7 @@ bot = MyBot.RBot(command_prefix ='zz',
                  max_messages=None,
                  owner_id=162074751341297664,
                  allowed_mentions=discord.AllowedMentions.none(),
+                 help_command=ReactionHelp(verify_type=True),
                  activity=start_activity)
 
 bot.load_extension('cogs.test')

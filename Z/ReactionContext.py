@@ -12,14 +12,15 @@ class _ProxyMessage(discord.PartialMessage):
 
 
 class ReactionContext(commands.Context):
-    def __init__(self, bot, message_id, author, channel):
+    def __init__(self, bot, payload, author, channel):
         self.prefix = ''
         self.bot = bot
-        self.message = _ProxyMessage(message_id, author, channel, channel.guild)
+        self.payload = payload
+        self.message = _ProxyMessage(payload.message_id, author, channel, channel.guild)
         self._state = author._state
+        self.reaction_command = True
 
     def set_command(self, prefix, command, emoji):
         self.prefix = prefix
         self.invoked_with = emoji
         self.command = command
-        self.reaction_command = True

@@ -82,15 +82,16 @@ class ReactionBotBase(commands.Bot):
 
     async def get_context(self, *args, **kwargs):
         ctx = await super().get_context(*args, **kwargs)
-        ctx.reaction_command = False
+        try:
+            ctx.reaction_command = False
+        except AttributeError:
+            pass
         return ctx
 
     async def on_raw_reaction_add(self, payload):
         await self.process_reaction_commands(payload)
 
-    async def process_reaction_commands(self, payload, *, cls=ReactionContext):
-        if str(payload.emoji) != self.command_emoji:
-            return
+    def get_reaction_context(self, payload, *, cls=ReactionContext):
         g_id = payload.guild_id
         u_id = payload.user_id
         if guild:=self.get_guild(g_id):
@@ -102,19 +103,25 @@ class ReactionBotBase(commands.Bot):
         if not user:
             user = discord.Object(id=u_id)
         channel = self.get_channel(payload.channel_id) or discord.Object(id=payload.channel_id)
+        return cls(self, payload, user, channel)
+
+    async def process_reaction_commands(self, payload):
+        if str(payload.emoji) != self.command_emoji:
+            return
         #make a pseudo context
-        context = cls(self, payload.message_id, user, channel)
-        if await self.r_before_invoke(context):
+        context = self.get_reaction_context(payload)
+        if await self.reaction_before_invoke(context):
             try:
-                emoji = await self.wait_emoji_stream(u_id, payload.message_id)
+                emoji = await self.wait_emoji_stream(payload.user_id, payload.message_id)
                 if emoji:
                     command = self.get_emoji_command(emoji)
                     if command:
                         context.set_command(self.command_emoji, command, emoji)
                         await self.invoke(context)
-            except Exception:
+            except Exception as e:
                 pass
-            await self.r_after_invoke(context)
+            finally:
+                await self.reaction_after_invoke(context)
 
     def _cleanup_tasks(self, done, pending):
         # cleanup tasks from emoji waiting
@@ -157,21 +164,30 @@ class ReactionBotBase(commands.Bot):
                 else:
                     return None
 
-    async def r_before_invoke(self, context):
+    async def reaction_before_invoke(self, context):
         try:
             await self._mc.acquire(context)
         except commands.MaxConcurrencyReached:
             return False
-        if self.listening_emoji:
-            try:
-                await self.http.add_reaction(context.channel.id, context.message.id, self.listening_emoji)
-            except Exception:
-                pass
+        try:
+            await self.http.add_reaction(context.channel.id, context.message.id, self.listening_emoji)
+        except Exception:
+            pass
         return True
 
-    async def r_after_invoke(self, context):
+    async def reaction_after_invoke(self, context):
         await self._mc.release(context)
-        if self.listening_emoji:
+        if context.channel.permissions_for(context.me).manage_messages:
+            try:
+                await context.message.clear_reactions()
+            except discord.NotFound:
+                pass
+            except Exception:
+                try:
+                    await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
+                except Exception:
+                    pass
+        else:
             try:
                 await self.http.remove_own_reaction(context.channel.id, context.message.id, self.listening_emoji)
             except Exception:

@@ -11,7 +11,6 @@ class ReactionHelp(commands.DefaultHelpCommand):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('paginator', commands.Paginator(suffix=None, prefix=None))
         self.emojis = kwargs.get('emojis', ['\U0001f1ed'])
-        self.verify_type = kwargs.get('verify_type', False)
         super().__init__(*args, **kwargs)
 
     def get_ending_note(self):
@@ -49,17 +48,6 @@ class ReactionHelp(commands.DefaultHelpCommand):
                                                 command.name,
                                                 f'`{command.short_doc}`' if command.short_doc else '')
                 self.paginator.add_line(self.shorten_text(entry))
-
-    async def filter_commands(self, commands, **kwargs):
-        commands = await super().filter_commands(commands, **kwargs)
-        if self.verify_type:
-            is_reaction = getattr(self.context, 'reaction_command', False)
-
-            if is_reaction:
-                commands = [cmd for cmd in commands if isinstance(cmd, ReactionCommandMixin)]
-            else:
-                commands = [cmd for cmd in commands if not isinstance(cmd, ReactionCommandMixin) or cmd.invoke_with_message]
-        return commands
 
     def _add_to_bot(self, bot):
         command = _ReactionHelpCommandImpl(self, **self.command_attrs)

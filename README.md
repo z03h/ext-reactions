@@ -15,51 +15,63 @@ from discord.ext import commands, reactioncommands
 intents = discord.Intents.default()
 intents.members = True
 
-# 🤔 is the reaction prefix, must be added to start listening for command emojis.
+
+# 'prefix ' is the normal command_prefix for message commands.
+# 🤔 is the reaction prefix. It must be added to start listening for command emojis.
 # A user can only have 1 listening session at once.
-# If they mess up the command they must end the session then react the reaction prefix again.
-# 👀 will be added to let the user know the bot is listening and
-# for separating groups from subcommands.
+# If they mess up the command they must end the session
+# by removing 🤔(reaction prefix) and adding the reaction prefix again.
+# 👀 will be added to let the user know the bot is listening for
+# reaction add/remove and for separating groups from subcommands.
 bot = reactioncommands.ReactionBot('prefix ', '🤔', '👀',
                                    intents=intents)
 # All the normal Bot kwargs will work also.
 
+
+
 # To invoke this command you would react 🤔 on a message.
 # The bot will add 👀, then you can add reactions to invoke the command.
-# '👋👋'' is what needs to be added/removed to invoke this command.
+# '👋👋' is what needs to be added/removed to invoke this command.
 # In total, you would follow this reaction order:
 # `+` is add reaction, `-` is remove reaction
 # +🤔(prefix) > +👋 > -👋
-
-# You can also invoke this with a message with content 'prefix hi'.
-
-# Works with normal @commands.command() kwargs.
 @bot.reaction_command('👋👋', name='hi')
 async def not_hi(ctx):
     """Says hi!"""
     await ctx.send(f'Hi {ctx.author.mention}!')
+# You can also invoke this with a message with content 'prefix hi'.
+# Works with normal @commands.command() kwargs.
+
+
 
 # Groups works too!
 # To invoke the subcommand 'sub', you could react:
 # +🤔(prefix) > +👍🏾 > +👀 > -👍🏾 > +👍🏾
-# 👀 (listening_emoji) separates parent emojis from subcommand emojis
+# 👀 (listening_emoji) separates parent reactions from subcommand reactions
 
 # `case_insensitive` will try to ignore different skin color/gender emojis.
 # You can also invoke the subcommand with:
-# +🤔(prefix) > +👍 > +👀 > -👍 > +👍
-@bot.reaction_group('👍🏾', case_insensitive=True):
+# +🤔(prefix) > +👍🏾 > +👀 > +👍 > -👍
+@bot.reaction_group('👍🏾', case_insensitive=True)
 async def parent(ctx):
-    await ctx.send(f'In parent command {ctx.command}!\n{ctx.invoked_subcommand=} : {ctx.subcommand_passed=}')
+    await ctx.send(f'In parent command **{ctx.command}**!\n' \
+                   '{ctx.invoked_subcommand.name=}\n' \
+                   '{ctx.subcommand_passed=}\n{"-"*10}')
 
 # `invoke_with_message=False` means the command can
-# only be invoked from reactions (defaults to True).
-@parent.reaction_command('👍🏾👍🏾', invoke_with_message=False):
+# only be invoked from reactions (default is True).
+@parent.reaction_command('👍🏾👍🏾', invoke_with_message=False)
 async def sub(ctx):
     """
-    Groups are probably too confusing to use with reactions.
-    This mainly exists to be compatible with normal Groups.
+    Groups are hard to use with reactions.
+    This feature mainly exists to be compatible with normal Groups,
+    since you can still invoke this command with a message
     """
-    await ctx.send(f'In sub command {ctx.command}!\n{ctx.invoked_subcommand=} : {ctx.subcommand_passed=}\n{ctx.parent=}')
+    await ctx.send(f'In sub command **{ctx.command}**!\n' \
+                   '`{ctx.invoked_subcommand=}`---`{ctx.subcommand_passed=}`\n' \
+                   '{ctx.command.parent.name=}')
+
+
 
 # Supports checks, before and after invoke,  local error handlers,
 # cooldowns, and max_concurrency!
@@ -73,15 +85,20 @@ async def sub(ctx):
 # +🤔(prefix) > +🥺 > -🥺
 @bot.reaction_command(['🥺', '🥺🥺'])
 async def please(ctx):
-    text = f'{ctx.author=} is **NOT** the same as ctx.message.author for commands invoked with reactions\n' \
-            'ctx.message is the message reactions were added to\n' \
-            'ctx.author is the user who added the reactions\n' \
-            'If the message is in the cache, ctx.message will be a full message.' \
+    text = 'If the message is in the cache, ctx.message will be a full message.' \
             'If the message isn\'t in the cache, it will be a PartialMessage\n' \
-            'Lots of other shortcomings of context from reactions.'
+            f'{ctx.author=} is **NOT** the same as ctx.message.author for reaction commands\n' \
+            'ctx.message is the message reactions were added to\n' \
+            'ctx.author is the user who added the reactions, not the author of the message\n' \
+            'Lots of things broken, ex: args will only be default value or None lmao'
     await ctx.trigger_typing()
     await asyncio.sleep(9)
     await ctx.message.reply(text)
+
+with open('definitelynotmytoken', 'r') as f:
+    token = f.read()
+
+bot.run(token)
 
 ```
 ___

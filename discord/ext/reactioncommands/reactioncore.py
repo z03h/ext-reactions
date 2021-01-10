@@ -3,6 +3,15 @@ import re
 import discord
 from discord.ext import commands
 
+from .reactionerrors import ReactionOnlyCommand
+
+__all__ = ('ReactionCommand',
+           'ReactionGroup',
+           'reaction_command',
+           'reaction_group',
+           'ReactionCommandMixin',
+           'ReactionGroupMixin')
+
 
 class _EmojiInsensitiveDict(dict):
     def __init__(self, *args, **kwargs):
@@ -39,15 +48,19 @@ class ReactionCommandMixin:
         super().__init__(*args, **kwargs)
         emojis = kwargs.get('emojis')
         if not emojis:
-            raise ValueError(f'emojis cannot be empty for {self.name}')
+            raise ValueError(f'emojis cannot be empty for command {self.name}')
         self.invoke_with_message = kwargs.get('invoke_with_message', True)
         self.emojis = [emojis] if isinstance(emojis, str) else emojis
 
+    async def can_run(self, ctx):
+        if not self.enabled:
+            raise commands.DisabledCommand('{0.name} command is disabled'.format(self))
+        if not getattr(ctx, 'reaction_command', False) and not self.invoke_with_message:
+            raise ReactionOnlyCommand('{0.name} command is only usable with reactions'.format(self))
+        return await super().can_run(ctx)
+
     async def _parse_arguments(self, ctx):
-        try:
-            is_reaction = ctx.reaction_command
-        except AttributeError:
-            is_reaction = False
+        is_reaction = getattr(ctx, 'reaction_command', False)
 
         if is_reaction:
             ctx.args = [ctx] if self.cog is None else [self.cog, ctx]
@@ -156,11 +169,9 @@ class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
         super().__init__(*args, **kwargs)
 
     async def invoke(self, ctx):
-        try:
-            reaction_command = ctx.reaction_command
-        except AttributeError:
-            reaction_command = False
-        if reaction_command:
+        is_reaction = getattr(ctx, 'reaction_command', False)
+
+        if is_reaction:
             ctx.invoked_subcommand = None
             ctx.subcommand_passed = None
             early_invoke = not self.invoke_without_command

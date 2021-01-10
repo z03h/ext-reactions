@@ -4,6 +4,9 @@ from discord.ext import commands
 from .reactioncore import ReactionCommandMixin
 from .reactioncontext import ReactionContext
 
+__all__ = ('ReactionHelp',)
+
+
 class ReactionHelp(commands.DefaultHelpCommand):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('paginator', commands.Paginator(suffix=None, prefix=None))
@@ -31,9 +34,10 @@ class ReactionHelp(commands.DefaultHelpCommand):
         get_width = discord.utils._string_width
 
         for command in commands:
-            if isinstance(command, (ReactionCommandMixin)):
+            command_emojis = getattr(command, 'emojis', None)
+            if command_emojis:
                 formatted_emojis = []
-                for emoji in command.emojis:
+                for emoji in command_emojis:
                     formatted_emojis.append(''.join(map(filter_regional, emoji)))
                 entry = '{0}{1}=**{2}** {3}'.format(self.indent * '\u200a',
                                                     ','.join(formatted_emojis),
@@ -49,10 +53,8 @@ class ReactionHelp(commands.DefaultHelpCommand):
     async def filter_commands(self, commands, **kwargs):
         commands = await super().filter_commands(commands, **kwargs)
         if self.verify_type:
-            try:
-                is_reaction = self.context.reaction_command
-            except AttributeError:
-                is_reaction = False
+            is_reaction = getattr(self.context, 'reaction_command', False)
+
             if is_reaction:
                 commands = [cmd for cmd in commands if isinstance(cmd, ReactionCommandMixin)]
             else:

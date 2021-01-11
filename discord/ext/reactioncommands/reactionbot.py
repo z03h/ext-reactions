@@ -1,4 +1,6 @@
+import time
 import asyncio
+from collections import Counter
 
 import discord
 from discord.ext import commands
@@ -6,20 +8,28 @@ from discord.ext import commands
 from .reactionhelp import ReactionHelp
 from .reactioncontext import ReactionContext
 from .reactioncore import ReactionCommandMixin, ReactionGroupMixin
-from .reactionproxy import ProxyUser, ProxyMember, ProxyTextChannel, ProxyDMChannel, ProxyGuild
+from .reactionproxy import (ProxyUser, ProxyMember, ProxyTextChannel,
+                            ProxyDMChannel, ProxyGuild)
 
-__all__ = ('ReactionBot', 'AutoShardedReactionBot')
+__all__ = ('ReactionBot', 'AutoShardedReactionBot', 'ReactionBotMixin')
 
 
-class ReactionBotBase(ReactionGroupMixin):
+class ReactionBotMixin(ReactionGroupMixin):
+
     def __init__(self, command_prefix, command_emoji, listening_emoji, *args, **kwargs):
-        if not command_emoji:
+        if not command_emoji or not isinstance(command_emoji, str):
             raise ValueError('command_emoji must be a str')
-        if not listening_emoji:
-            raise ValueError('listening_emoji must be a str')
+        if listening_emoji is not None and not isinstance(listening_emoji, str):
+            raise ValueError('listening_emoji must be a str or None')
+        if command_emoji == listening_emoji:
+            raise ValueError('command_emoji and listening_emoji cannot be the same')
         self.command_emoji = command_emoji
         self.listening_emoji = listening_emoji
-        self.listen_timeout = kwargs.get('timeout', 15)
+        self.listen_timeout = kwargs.get('listen_timeout', 15)
+        self.listen_total_time = kwargs.get('listen_total_time', 120)
+        self.active_ctx_sesssions = Counter()
+        self.remove_reactions_after = kwargs.get('remove_reactions_after', True)
+
         kwargs.setdefault('help_command', ReactionHelp())
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
@@ -40,21 +50,22 @@ class ReactionBotBase(ReactionGroupMixin):
         return discord.utils.get(self.cached_messages, id=message_id) if self._connection._messages else None
 
     async def process_reaction_commands(self, payload):
-        # Create a pseudo context for reaction invoking
         context = await self.get_reaction_context(payload)
         await self.reaction_invoke(context)
 
-    async def get_reaction_context(self, payload, *, cls=ReactionContext):
+    async def get_reaction_context(self, payload, *, cls=ReactionContext, check=None):
         #add support for callable here
         command_emoji = self.command_emoji
 
-        message = self._get_message(payload.message_id)
-        if message:
-            author, _ = self.create_proxies(payload, member_only=True)
-        else:
-            author, message = self.create_proxies(payload)
+        author, message = self._create_proxies(payload)
 
         ctx = cls(self, payload, author=author, message=message)
+        try:
+            # try and exit before emoji stream
+            if author == self.user or author.bot:
+                return ctx
+        except (NameError, AttributeError):
+            pass
 
         if str(payload.emoji) != command_emoji:
             return ctx
@@ -62,7 +73,12 @@ class ReactionBotBase(ReactionGroupMixin):
         ctx.prefix = command_emoji
 
         try:
-            emojis, end_early = await self.wait_emoji_stream(ctx)
+            if not await self.reaction_before_invoke(ctx):
+                return ctx
+            self.active_ctx_sesssions[ctx.message.id] += 1
+            emojis, end_early = await self._wait_for_emoji_stream(ctx, check=check)
+            self.active_ctx_sesssions[ctx.message.id] -= 1
+
             if not end_early:
                 ctx.remove_after.append((command_emoji, ctx.author))
             ctx.view = commands.view.StringView(emojis or '')
@@ -71,17 +87,19 @@ class ReactionBotBase(ReactionGroupMixin):
             ctx.invoked_with = invoker
             ctx.command = self.get_reaction_command(invoker)
         except Exception as e:
-            print('get r context', e)
+            print(e)
+            pass
         return ctx
 
-    async def reaction_invoke(self, context):
-        await self.reaction_after_invoke(context)
+    async def reaction_invoke(self, ctx):
+        self.loop.create_task(self.reaction_after_invoke(ctx))
         try:
-            await self.invoke(context)
+            await self.invoke(ctx)
         except Exception as e:
-            print('r invoke', e)
+            print(e)
+            pass
 
-    def create_proxies(self, payload, *, member_only=False):
+    def _create_proxies(self, payload):
         if payload.guild_id:
             guild = self.get_guild(payload.guild_id)
             if not guild:
@@ -89,15 +107,13 @@ class ReactionBotBase(ReactionGroupMixin):
                 # who the fuck doesn't have guild intent
                 guild = ProxyGuild(self, payload.guild_id)
                 guild.chunked = False
-
-            author = payload.member or guild.get_member(payload.user_id)
-            if author:
-                guild = author.guild
+                author = payload.member
             else:
+                author = payload.member or guild.get_member(payload.user_id)
+
+            if not author:
                 author = ProxyMember(self, payload.user_id, guild)
 
-            if member_only:
-                return author, None
             # again, who the fuck doesn't have guild intent
             channel = self.get_channel(payload.channel_id) or ProxyTextChannel(self, payload.channel_id, guild)
         else:
@@ -109,19 +125,23 @@ class ReactionBotBase(ReactionGroupMixin):
 
         return author, channel.get_partial_message(payload.message_id)
 
-    async def wait_emoji_stream(self, ctx, *, check=None):
-        if not await self.reaction_before_invoke(ctx):
-            return '', False
+    async def _wait_for_emoji_stream(self, ctx, *, check=None):
         if not check:
             def check(payload):
                 return payload.message_id == ctx.message.id and payload.user_id == ctx.author.id
         command = []
+        if self.listen_total_time is not None:
+            cutoff = int(time.time()) + self.listen_total_time
         while True:
             tasks = (self.wait_for('raw_reaction_add', check=check),
                      self.wait_for('raw_reaction_remove', check=check))
             done, pending = await asyncio.wait([asyncio.create_task(t) for t in tasks],
                                                timeout=self.listen_timeout,
                                                return_when=asyncio.FIRST_COMPLETED)
+            if self.listen_total_time is not None:
+                current = int(time.time())
+                if current > cutoff:
+                    return '', False
             if done:
                 #user reacted
                 result = done.pop()
@@ -155,33 +175,51 @@ class ReactionBotBase(ReactionGroupMixin):
         for future in (pending or []):
             future.cancel()
 
-    async def reaction_before_invoke(self, context):
+    async def reaction_before_invoke(self, ctx):
         try:
-            await self._mc.acquire(context)
+            await self._mc.acquire(ctx)
         except commands.MaxConcurrencyReached:
             return False
         #add support for callable here
         listening_emoji = self.listening_emoji
-        context.listening_emoji = listening_emoji
-        try:
-            await context.message.add_reaction(listening_emoji)
-            context.remove_after.append((listening_emoji, context.me))
-        except Exception:
-            pass
+        ctx.listening_emoji = listening_emoji
+        if listening_emoji:
+            try:
+                await ctx.message.add_reaction(listening_emoji)
+                ctx.remove_after.append((listening_emoji, ctx.me))
+            except Exception:
+                pass
         return True
 
-    async def reaction_after_invoke(self, context):
-        await self._mc.release(context)
-        can_remove = context.channel.permissions_for(context.me).manage_messages
-        for emoji, user in context.remove_after:
-            if user == self.user or can_remove:
+    async def reaction_after_invoke(self, ctx):
+        await self._mc.release(ctx)
+        if self.remove_reactions_after:
+            try:
+                can_remove = ctx.channel.permissions_for(ctx.me).manage_messages
+            except:
+                can_remove = True
+            for emoji, user in ctx.remove_after:
+                if user == self.user:
+                    if not (emoji == ctx.listening_emoji and self.active_ctx_sesssions[ctx.message.id]):
+                        try:
+                            await ctx.message.remove_reaction(emoji, self.user)
+                        except Exception:
+                            pass
+                elif can_remove:
+                    try:
+                        await ctx.message.remove_reaction(emoji, user)
+                    except Exception:
+                        pass
+            if not self.active_ctx_sesssions[ctx.message.id]:
                 try:
-                    await context.message.remove_reaction(emoji, user)
-                except Exception:
+                    del self.active_ctx_sesssions[ctx.message.id]
+                except KeyError:
                     pass
 
-class ReactionBot(ReactionBotBase, commands.Bot):
+
+class ReactionBot(ReactionBotMixin, commands.Bot):
     pass
 
-class AutoShardedReactionBot(ReactionBotBase, commands.AutoShardedBot):
+
+class AutoShardedReactionBot(ReactionBotMixin, commands.AutoShardedBot):
     pass

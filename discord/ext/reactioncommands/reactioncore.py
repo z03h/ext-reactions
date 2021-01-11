@@ -1,8 +1,7 @@
-import re
-
 import discord
 from discord.ext import commands
 
+from .utils import scrub_emoji
 from .reactionerrors import ReactionOnlyCommand
 
 __all__ = ('ReactionCommand',
@@ -14,15 +13,12 @@ __all__ = ('ReactionCommand',
 
 
 class _EmojiInsensitiveDict(dict):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #skin colors, genders
-        to_remove = '\U0001f3fb|\U0001f3fc|\U0001f3fd|\U0001f3fe|\U0001f3ff|' \
-                    '\u200d[\u2642\u2640]\ufe0f'
-        self.clean = re.compile(to_remove)
 
     def _clean(self, k):
-        return self.clean.sub('', k)
+        return scrub_emoji(k)
 
     def __contains__(self, k):
         return super().__contains__(self._clean(k))
@@ -44,6 +40,7 @@ class _EmojiInsensitiveDict(dict):
 
 
 class ReactionCommandMixin:
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         emojis = kwargs.get('emojis')
@@ -96,6 +93,7 @@ class ReactionCommandMixin:
 
 
 class ReactionGroupMixin:
+
     def __init__(self, *args, **kwargs):
         self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('case_insensitive') else {}
         super().__init__(*args, **kwargs)
@@ -164,6 +162,7 @@ class ReactionCommand(ReactionCommandMixin, commands.Command):
 
 
 class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
+
     def __init__(self, *args, **kwargs):
         self.invoke_without_command = kwargs.get('invoke_without_command', False)
         super().__init__(*args, **kwargs)
@@ -213,6 +212,6 @@ def reaction_command(emojis, name=None, cls=None, **attrs):
 
     return decorator
 
-def reaction_group(emojis, name=None, cls=None, **attrs):
+def reaction_group(emojis, name=None, **attrs):
     attrs.setdefault('cls', ReactionGroup)
     return reaction_command(emojis, name=name, **attrs)

@@ -46,12 +46,12 @@ async def not_hi(ctx):
 
 # Groups works too!
 # To invoke the subcommand 'sub', you could react:
-# +🤔(prefix) > +👍🏾 > +👀 > -👍🏾 > +👍🏾
+# +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > -👍🏾 > +👍🏾
 # 👀 (listening_emoji) separates parent reactions from subcommand reactions
 
 # `case_insensitive` will try to ignore different skin color/gender emojis.
 # You can also invoke the subcommand with:
-# +🤔(prefix) > +👍🏾 > +👀 > +👍 > -👍
+# +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > +👍 > -👍
 @bot.reaction_group('👍🏾', case_insensitive=True)
 async def parent(ctx):
     await ctx.send(f'In parent command **{ctx.command}**!\n' \
@@ -65,7 +65,7 @@ async def sub(ctx):
     """
     Groups are hard to use with reactions.
     This feature mainly exists to be compatible with normal Groups,
-    since you can still invoke this command with a message
+    since you can normally invoke commands with a message
     """
     await ctx.send(f'In sub command **{ctx.command}**!\n' \
                    '`{ctx.invoked_subcommand=}`---`{ctx.subcommand_passed=}`\n' \
@@ -85,12 +85,13 @@ async def sub(ctx):
 # +🤔(prefix) > +🥺 > -🥺
 @bot.reaction_command(['🥺', '🥺🥺'])
 async def please(ctx):
-    text = 'If the message is in the cache, ctx.message will be a full message.' \
-            'If the message isn\'t in the cache, it will be a PartialMessage\n' \
-            f'{ctx.author=} is **NOT** the same as ctx.message.author for reaction commands\n' \
-            'ctx.message is the message reactions were added to\n' \
-            'ctx.author is the user who added the reactions, not the author of the message\n' \
-            'Lots of things broken, ex: args will only be default value or None lmao'
+    text = 'ctx.message will be a PartialMessage\n' \
+           'To get a full message, you can use `ctx.get()` which searches cache' \
+           'or `ctx.fetch()` which is a shortcut to `PartialMessage.fetch()\n`'
+           f'{ctx.author=} is **NOT** the same as ctx.message.author for reaction commands\n' \
+           'ctx.message is the message reactions were added to\n' \
+           'ctx.author is the user who added reactions, not the author of the message\n' \
+           'Lots of things broken, ex: args will only be default value or None lmao'
     await ctx.trigger_typing()
     await asyncio.sleep(9)
     await ctx.message.reply(text)

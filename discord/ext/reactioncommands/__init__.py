@@ -1,7 +1,8 @@
+from . import utils
 from .reactionbot import *
-from .reactioncontext import *
 from .reactioncore import *
-from .reactionerrors import *
 from .reactionhelp import *
+from .reactionerrors import *
+from .reactioncontext import *
 
 __version__ = "0.1.0a"

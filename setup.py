@@ -27,13 +27,13 @@ if version.endswith(('a', 'b', 'rc')):
     except Exception:
         pass
 
-setup(name='reactionbot',
+setup(name='dpy-reactionbot',
       author='z03h',
       url='https://github.com/z03h/ReactionCommandBot',
       version=version,
       packages=['discord.ext.reactioncommands'],
       license='MIT',
-      description='Extends discord.py Bot commands to reactions',
+      description='discord.py extension that adds reaction commands',
       install_requires=requirements,
       python_requires='>=3.6.4'
 )

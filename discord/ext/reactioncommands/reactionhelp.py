@@ -8,9 +8,11 @@ __all__ = ('ReactionHelp',)
 
 
 class ReactionHelp(commands.DefaultHelpCommand):
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('paginator', commands.Paginator(suffix=None, prefix=None))
         self.emojis = kwargs.get('emojis', ['\U0001f1ed'])
+        self.match_command_type = kwargs.get('match_command_type', True)
         super().__init__(*args, **kwargs)
 
     def get_ending_note(self):
@@ -49,6 +51,15 @@ class ReactionHelp(commands.DefaultHelpCommand):
                                                 f'`{command.short_doc}`' if command.short_doc else '')
                 self.paginator.add_line(self.shorten_text(entry))
 
+    async def filter_commands(self, commands, *, sort=False, key=None):
+        if self.match_command_type:
+            reaction_command = getattr(self.context, 'reaction_command', False)
+            if reaction_command:
+                cmds = (cmd for cmd in commands if isinstance(cmd, ReactionCommandMixin))
+            else:
+                cmds = (cmd for cmd in commands if getattr(cmd, 'invoke_with_message', True))
+        return await super().filter_commands(cmds, sort=sort, key=key)
+
     def _add_to_bot(self, bot):
         command = _ReactionHelpCommandImpl(self, **self.command_attrs)
         bot.add_command(command)
@@ -60,6 +71,7 @@ class ReactionHelp(commands.DefaultHelpCommand):
         self._command_impl = None
 
 class _ReactionHelpCommandImpl(ReactionCommandMixin, commands.help._HelpCommandImpl):
+
     def __init__(self, inject, *args, **kwargs):
         kwargs['emojis'] = inject.emojis
         super().__init__(inject, *args, **kwargs)

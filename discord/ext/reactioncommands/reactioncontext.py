@@ -4,6 +4,7 @@ from discord.ext import commands
 __all__ = ('ReactionContext',)
 
 class ReactionContext(commands.Context):
+
     def __init__(self, bot, payload, author, **attrs):
         self.bot = bot
         # bot is the only guarateed thing here
@@ -27,7 +28,7 @@ class ReactionContext(commands.Context):
         self.remove_after = []
         self.listening_emoji = None
         self.full_emojis = ''
-        # need to separate self.author from message.author
+        # need to separate ctx.author from ctx.message.author
         # since they can be different users
         self.author = author
 
@@ -36,3 +37,11 @@ class ReactionContext(commands.Context):
             return None
         self.message = await self.message.fetch()
         return self.message
+
+    def get(self):
+        if self.message is None:
+            return None
+        m = self.bot._get_message(self.message.id)
+        if m:
+            self.message = m
+        return m

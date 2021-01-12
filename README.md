@@ -17,14 +17,15 @@ intents.members = True
 
 
 # 'prefix ' is the normal command_prefix for message commands.
-# 🤔 is the reaction prefix. It must be added to start listening for command emojis.
+# '🤔'' is the reaction prefix. It must be added to start listening for command emojis.
 # A user can only have 1 listening session at once.
-# If they mess up the command they must end the session
-# by removing 🤔(reaction prefix) and adding the reaction prefix again.
-# 👀 will be added to let the user know the bot is listening for
-# reaction add/remove and for separating groups from subcommands.
+# If they mess up the command they must end the session by removing
+# 🤔(reaction prefix) and adding the reaction prefix again.
+# '👀' will be added to let the user know the bot is listening for
+# reaction events and for separating groups from subcommands.
 bot = reactioncommands.ReactionBot('prefix ', '🤔', '👀',
                                    intents=intents)
+# command_emoji and listening_emoji support callables like `get_emoji_prefix(bot, payload)`
 # All the normal Bot kwargs will work also.
 
 
@@ -49,7 +50,7 @@ async def not_hi(ctx):
 # +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > -👍🏾 > +👍🏾
 # 👀 (listening_emoji) separates parent reactions from subcommand reactions
 
-# `case_insensitive` will try to ignore different skin color/gender emojis.
+# `case_insensitive` will try to ignore different skin color/gender modifiers.
 # You can also invoke the subcommand with:
 # +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > +👍 > -👍
 @bot.reaction_group('👍🏾', case_insensitive=True)
@@ -65,7 +66,7 @@ async def sub(ctx):
     """
     Groups are hard to use with reactions.
     This feature mainly exists to be compatible with normal Groups,
-    since you can normally invoke commands with a message
+    since reaction commands can be invoked with a message.
     """
     await ctx.send(f'In sub command **{ctx.command}**!\n' \
                    '`{ctx.invoked_subcommand=}`---`{ctx.subcommand_passed=}`\n' \
@@ -73,8 +74,8 @@ async def sub(ctx):
 
 
 
-# Supports checks, before and after invoke,  local error handlers,
-# cooldowns, and max_concurrency!
+# Supports checks, cooldowns, max_concurrency,
+# before and after invoke, and local error handlers
 @commands.guild_only()
 @commands.cooldown(1, 60, commands.BucketType.user)
 @commands.max_concurrency(1)
@@ -86,19 +87,19 @@ async def sub(ctx):
 @bot.reaction_command(['🥺', '🥺🥺'])
 async def please(ctx):
     text = 'ctx.message will be a PartialMessage\n' \
-           'To get a full message, you can use `ctx.get()` which searches cache' \
+           'To get a full message, you can use `ctx.get()` which searches message cache' \
            'or `ctx.fetch()` which is a shortcut to `PartialMessage.fetch()\n`'
            f'{ctx.author=} is **NOT** the same as ctx.message.author for reaction commands\n' \
            'ctx.message is the message reactions were added to\n' \
            'ctx.author is the user who added reactions, not the author of the message\n' \
-           'Lots of things broken, ex: args will only be default value or None lmao'
+           'Lots of things broken, ex: args will only be default value or None, lmao'
     await ctx.trigger_typing()
     await asyncio.sleep(9)
     await ctx.message.reply(text)
 
+
 with open('definitelynotmytoken', 'r') as f:
     token = f.read()
-
 bot.run(token)
 
 ```

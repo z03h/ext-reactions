@@ -17,10 +17,6 @@ __all__ = ('ReactionBot', 'AutoShardedReactionBot', 'ReactionBotMixin')
 class ReactionBotMixin(ReactionGroupMixin):
 
     def __init__(self, command_prefix, command_emoji, listening_emoji, *args, **kwargs):
-        if not command_emoji or not isinstance(command_emoji, str):
-            raise ValueError('command_emoji must be a str')
-        if listening_emoji is not None and not isinstance(listening_emoji, str):
-            raise ValueError('listening_emoji must be a str or None')
         if command_emoji == listening_emoji:
             raise ValueError('command_emoji and listening_emoji cannot be the same')
         self.command_emoji = command_emoji
@@ -29,6 +25,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         self.listen_total_time = kwargs.get('listen_total_time', 120)
         self.active_ctx_sesssions = Counter()
         self.remove_reactions_after = kwargs.get('remove_reactions_after', True)
+        self.__debug = kwargs.get('_debug', False)
 
         kwargs.setdefault('help_command', ReactionHelp())
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
@@ -49,15 +46,45 @@ class ReactionBotMixin(ReactionGroupMixin):
         messages = self.cached_messages if reverse else reversed(self.cached_messages)
         return discord.utils.get(self.cached_messages, id=message_id) if self._connection._messages else None
 
+    async def _get_x_emoji(self, payload, *, attr):
+        emoji = ret = getattr(self, attr)
+        if callable(emoji):
+            ret = await discord.utils.maybe_coroutine(emoji, self, payload)
+
+        if not isinstance(ret, str):
+            try:
+                ret = list(ret)
+            except TypeError:
+                # It's possible that a generator raised this exception.  Don't
+                # replace it with our own error if that's the case.
+                if isinstance(ret, collections.abc.Iterable):
+                    raise
+
+                raise TypeError(f"{attr} must be plain string, iterable of strings, or callable "
+                                "returning either of these, not {}".format(ret.__class__.__name__))
+
+            if not ret:
+                raise ValueError(f"Iterable {name} must contain at least one prefix")
+
+        return ret
+
+    async def get_command_emoji(self, payload):
+        return await self._get_x_emoji(payload, attr='command_emoji')
+
+    async def get_listening_emoji(self, payload):
+        if self.listening_emoji is None:
+            return None
+        return await self._get_x_emoji(payload, attr='listening_emoji')
+
     async def process_reaction_commands(self, payload):
         context = await self.get_reaction_context(payload)
         await self.reaction_invoke(context)
 
     async def get_reaction_context(self, payload, *, cls=ReactionContext, check=None):
-        #add support for callable here
-        command_emoji = self.command_emoji
+        command_emoji = await self.get_command_emoji(payload)
 
-        author, message = self._create_proxies(payload)
+        author, channel, guild = self._create_proxies(payload)
+        message = channel.get_partial_message(payload.message_id)
 
         ctx = cls(self, payload, author=author, message=message)
         try:
@@ -67,10 +94,12 @@ class ReactionBotMixin(ReactionGroupMixin):
         except (NameError, AttributeError):
             pass
 
-        if str(payload.emoji) != command_emoji:
+        maybe_prefix = str(payload.emoji)
+        if ((isinstance(command_emoji, str) and maybe_prefix == command_emoji) or
+                (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
+            ctx.prefix = maybe_prefix
+        else:
             return ctx
-
-        ctx.prefix = command_emoji
 
         try:
             if not await self.reaction_before_invoke(ctx):
@@ -87,8 +116,8 @@ class ReactionBotMixin(ReactionGroupMixin):
             ctx.invoked_with = invoker
             ctx.command = self.get_reaction_command(invoker)
         except Exception as e:
-            print(e)
-            pass
+            if self.__debug:
+                print(e)
         return ctx
 
     async def reaction_invoke(self, ctx):
@@ -96,8 +125,8 @@ class ReactionBotMixin(ReactionGroupMixin):
         try:
             await self.invoke(ctx)
         except Exception as e:
-            print(e)
-            pass
+            if self.__debug:
+                print(e)
 
     def _create_proxies(self, payload):
         if payload.guild_id:
@@ -106,7 +135,6 @@ class ReactionBotMixin(ReactionGroupMixin):
                 # I don't know why I need this
                 # who the fuck doesn't have guild intent
                 guild = ProxyGuild(self, payload.guild_id)
-                guild.chunked = False
                 author = payload.member
             else:
                 author = payload.member or guild.get_member(payload.user_id)
@@ -123,7 +151,7 @@ class ReactionBotMixin(ReactionGroupMixin):
             # could just create it but not sure
             channel = self.get_channel(payload.channel_id) or ProxyDMChannel(self, payload.channel_id, author)
 
-        return author, channel.get_partial_message(payload.message_id)
+        return author, channel, guild
 
     async def _wait_for_emoji_stream(self, ctx, *, check=None):
         if not check:
@@ -151,7 +179,7 @@ class ReactionBotMixin(ReactionGroupMixin):
                 except Exception:
                     return '', False
                 emoji = str(payload.emoji)
-                if emoji == self.command_emoji:
+                if emoji == ctx.prefix:
                     if command:
                         return ''.join(command), True
                     else:
@@ -181,9 +209,9 @@ class ReactionBotMixin(ReactionGroupMixin):
         except commands.MaxConcurrencyReached:
             return False
         #add support for callable here
-        listening_emoji = self.listening_emoji
+        listening_emoji = await self.get_listening_emoji(ctx.payload)
         ctx.listening_emoji = listening_emoji
-        if listening_emoji:
+        if listening_emoji is not None:
             try:
                 await ctx.message.add_reaction(listening_emoji)
                 ctx.remove_after.append((listening_emoji, ctx.me))

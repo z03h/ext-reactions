@@ -17,9 +17,10 @@ class ReactionHelp(commands.DefaultHelpCommand):
 
     def get_ending_note(self):
         bot = self.context.bot
-        return f"Bot that works with reactions and emojis\n" \
-               f"React with {bot.command_emoji} to start a command\n" \
-               f"Add reactions to get the command you want. Remove {bot.command_emoji} to start the command"
+        return "Bot that works with reactions and emojis\n" \
+               f"React with {self.context.prefix} to start a command\n" \
+               "Add reactions to get the command you want.\n" \
+               f"Remove {self.context.prefix} to start the command"
 
     def add_indented_commands(self, commands, *, heading, max_size=None):
         if not commands:
@@ -55,10 +56,17 @@ class ReactionHelp(commands.DefaultHelpCommand):
         if self.match_command_type:
             reaction_command = getattr(self.context, 'reaction_command', False)
             if reaction_command:
-                cmds = (cmd for cmd in commands if isinstance(cmd, ReactionCommandMixin))
+                commands = (cmd for cmd in commands if isinstance(cmd, ReactionCommandMixin))
             else:
-                cmds = (cmd for cmd in commands if getattr(cmd, 'invoke_with_message', True))
-        return await super().filter_commands(cmds, sort=sort, key=key)
+                commands = (cmd for cmd in commands if getattr(cmd, 'invoke_with_message', True))
+        return await super().filter_commands(commands, sort=sort, key=key)
+
+    def get_bot_mapping(self):
+        bot = self.context.bot
+        mapping = {}
+        for command in bot.commands:
+            mapping.setdefault(command.cog, []).append(command)
+        return mapping
 
     def _add_to_bot(self, bot):
         command = _ReactionHelpCommandImpl(self, **self.command_attrs)

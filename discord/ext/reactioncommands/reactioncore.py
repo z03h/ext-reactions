@@ -47,7 +47,7 @@ class ReactionCommandMixin:
         if not emojis:
             raise ValueError(f'emojis cannot be empty for command {self.name}')
         self.invoke_with_message = kwargs.get('invoke_with_message', True)
-        self.emojis = [emojis] if isinstance(emojis, str) else emojis
+        self.emojis = [emojis] if isinstance(emojis, str) else list(emojis)
 
     async def can_run(self, ctx):
         if not self.enabled:
@@ -99,6 +99,16 @@ class ReactionGroupMixin:
         super().__init__(*args, **kwargs)
 
     def add_command(self, command):
+        """Adds a command to the internal list.
+
+        If the command being passed has attribute ``emojis``, will be treated as
+        an instance of :class:`ReactionCommand <discord.ext.reactioncommands.ReactionCommand>`.
+
+        Parameters
+        ----------
+        command: :class:`Command <discord.ext.commands.Command>`
+            The command to add
+        """
         try:
             if any(emoji in self.emoji_mapping for emoji in command.emojis):
                 raise commands.CommandRegistrationError(' '.join(command.emojis))
@@ -113,17 +123,62 @@ class ReactionGroupMixin:
         except AttributeError as e:
             super().add_command(command)
 
-    def remove_command(self, command):
-        cmd = super().remove_command(command)
+    def remove_command(self, name):
+        """Remove a command to the internal list by name.
+
+        Attempts to remove :attr:`emojis <discord.ext.reactioncommands.ReactionCommand.emojis>`
+        from the internal mapping of ``emoji:Command``. Be wary of manually updating
+        :attr:`emojis <discord.ext.reactioncommands.ReactionCommand.emojis>`.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            Name of the command to remove
+
+        Returns
+        -------
+        Optional[:class:`Command <discord.ext.commands.Command>`]
+            The command that was removed
+        """
+        command = self.all_commands.pop(name, None)
+
+        # does not exist
+        if command is None:
+            return None
+
+        if name in command.aliases:
+            # we're removing an alias so we don't want to remove the rest
+            return command
+        # only remove emojis if we fully remove the command
         try:
-            if cmd:
+            if cmd and command:
                 for emoji in cmd.emojis:
                     self.emoji_mapping.pop(emoji, None)
         except AttributeError:
             pass
-        return cmd
+        # we're not removing the alias so let's delete the rest of them.
+        for alias in command.aliases:
+            cmd = self.all_commands.pop(alias, None)
+            # in the case of a CommandRegistrationError, an alias might conflict
+            # with an already existing command. If this is the case, we want to
+            # make sure the pre-existing command is not removed.
+            if cmd not in (None, command):
+                self.all_commands[alias] = cmd
+        return command
 
     def get_reaction_command(self, name):
+        """Gets a command by emoji.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            Emoji(s) for the command.
+
+        Returns
+        -------
+        Optional[:class:`ReactionCommand <.ReactionCommand>`]
+            The command or ``None``
+        """
         if ' ' not in name:
             return self.emoji_mapping.get(name)
         names = name.split(' ')
@@ -141,6 +196,23 @@ class ReactionGroupMixin:
 
 
     def reaction_command(self, emojis, *args, **kwargs):
+        """Decorator that creates and adds a command to the internal list of
+        commands. Calls :func:`reaction_command() <.reaction_command>`.
+
+        ``args`` and ``kwargs`` should be the same as normal :meth:`@Group.command() <discord.ext.commands.Group.command>`.
+
+        Parameters
+        ----------
+        emojis: Union[:class:`list`, :class:`str`]
+            An emoji or list of emojis that can be used to invoke this command.
+        invoke_with_message: Optional[:class:`bool`]
+            Whether the command can be invoke with messages. Default value is ``True``.
+
+        Returns
+        -------
+        :class:`Callable`
+            A decorator that converts the provided method into a Command, adds it to the bot, then returns it.
+        """
         def decorator(func):
             kwargs.setdefault('parent', self)
             result = reaction_command(emojis, *args, **kwargs)(func)
@@ -149,6 +221,23 @@ class ReactionGroupMixin:
         return decorator
 
     def reaction_group(self, emojis, *args, **kwargs):
+        """Shortcut decorator that creates and adds a group to the internal list
+        of commands. Calls :meth:`reaction_group() <.reaction_group>`.
+
+        ``args`` and ``kwargs`` should be the same as normal :meth:`@Group.group() <discord.ext.commands.Group.group>`.
+
+        Parameters
+        ----------
+        emojis: Union[:class:`list`, :class:`str`]
+            An emoji or list of emojis that can be used to invoke this group.
+        invoke_with_message: Optional[:class:`bool`]
+            Whether the command can be invoke with messages. Default value is ``True``.
+
+        Returns
+        -------
+        :class:`Callable`
+            A decorator that converts the provided method into a Group, adds it to the bot, then returns it.
+        """
         def decorator(func):
             kwargs.setdefault('parent', self)
             result = reaction_group(emojis, *args, **kwargs)(func)
@@ -158,15 +247,40 @@ class ReactionGroupMixin:
         return decorator
 
 class ReactionCommand(ReactionCommandMixin, commands.Command):
+    """Basically the same as :class:`commands.Command <discord.ext.commands.Command>` but
+    with modified invoke flow to allow emojis. Can be invoked with normal messages
+    or reactions by default.
+
+    ``args`` and ``kwargs`` should be the same as :class:`commands.Command <discord.ext.commands.Command>`.
+
+    Attributes
+    ----------
+    emojis: :class:`list`
+        A list of emojis that the command can be invoked with. This attribute
+        will always be a list even if the input is a single emoji.
+    invoke_with_message: Optional[:class:`bool`]
+        Whether the command can be invoked with messages or not. Pass ``False``
+        to only allow reaction invoke. Default value is ``True``.
+    """
     pass
 
 
 class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
+    """Basically the same as :class:`commands.Group <discord.ext.commands.Group>` but
+    with modified invoke flow to allow emojis. Can be invoked with normal messages
+    or reactions by default.
 
-    def __init__(self, *args, **kwargs):
-        self.invoke_without_command = kwargs.get('invoke_without_command', False)
-        super().__init__(*args, **kwargs)
+    ``args`` and ``kwargs`` should be the same as :class:`commands.Group <discord.ext.commands.Group>`.
 
+    Attributes
+    ----------
+    emojis: :class:`list`
+        A list of emojis that the command can be invoked with. This attribute
+        will always be a list even if the input is a single emoji.
+    invoke_with_message: Optional[:class:`bool`]
+        Whether the command can be invoked with messages or not. Pass ``False``
+        to only allow reaction invoke. Default value is ``True``.
+    """
     async def invoke(self, ctx):
         is_reaction = getattr(ctx, 'reaction_command', False)
 
@@ -202,6 +316,21 @@ class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
             await super().invoke(ctx)
 
 def reaction_command(emojis, name=None, cls=None, **attrs):
+    """Decorator that creates a command.
+
+    ``args`` and ``kwargs`` should be the same as normal :func:`@commands.command() <discord.ext.commands.command>`.
+
+    Parameters
+    ----------
+    emojis: Union[:class:`list`, :class:`str`]
+        An emoji or list of emojis that can be used to invoke this command.
+    invoke_with_message: Optional[:class:`bool`]
+        Whether the command can be invoke with messages. Default value is ``True``.
+    Returns
+    -------
+    :class:`Callable`
+        A decorator that converts the provided method into a Command, then returns it
+    """
     if cls is None:
         cls = ReactionCommand
 
@@ -213,5 +342,20 @@ def reaction_command(emojis, name=None, cls=None, **attrs):
     return decorator
 
 def reaction_group(emojis, name=None, **attrs):
+    """Decorator that creates a group.
+
+    ``args`` and ``kwargs`` should be the same as normal :func:`@commands.group() <discord.ext.commands.group>`.
+
+    Parameters
+    ----------
+    emojis: Union[:class:`list`, :class:`str`]
+        An emoji or list of emojis that can be used to invoke this command.
+    invoke_with_message: Optional[:class:`bool`]
+        Whether the command can be invoke with messages. Default value is ``True``.
+    Returns
+    -------
+    :class:`Callable`
+        A decorator that converts the provided method into a Group, then returns it
+    """
     attrs.setdefault('cls', ReactionGroup)
     return reaction_command(emojis, name=name, **attrs)

@@ -18,12 +18,18 @@ Decorators for adding commands in cogs.
 Command Classes
 ~~~~~~~~~~~~~~~
 
-Command and Group class.
+ReactionCommand
+^^^^^^^^^^^^^^^
 
 .. autoclass:: discord.ext.reactioncommands.ReactionCommand
     :members:
     :inherited-members: Command
+    :private-members: _parse_arguments
+
+ReactionGroup
+^^^^^^^^^^^^^
 
 .. autoclass:: discord.ext.reactioncommands.ReactionGroup
     :members:
     :inherited-members: Group
+    :private-members: _parse_arguments

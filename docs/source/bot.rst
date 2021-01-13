@@ -5,7 +5,7 @@ Bot Reference
 
 Bot classes that you can use to add reaction commands.
 
-The invoke order for reaction commands is weird:
+The default order in which everything is called and what methods call what:
 
 - :func:`on_raw_reaction_add(payload) <discord.on_raw_reaction_add>`
 
@@ -19,27 +19,27 @@ The invoke order for reaction commands is weird:
 
       - :meth:`reaction_after_processing(ctx) <.ReactionBot.reaction_after_processing>`
 
-      - :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>` which runs checks, before invokes, arg conversion, and all that stuff.
+      - :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>` which runs checks,
+        before invokes, arg conversion, and all that stuff.
 
 
 ReactionBotMixin
-~~~~~~~~~~~~~~~~
-.. note::
-    You probably shouldn't use this.
+^^^^^^^^^^^^^^^^
 
-    Use :class:`.ReactionBot` or :class:`.AutoShardedReactionBot` instead.
+.. autoclass:: discord.ext.reactioncommands.ReactionBotMixin
+
+.. note::
+    Probably use :class:`.ReactionBot` or :class:`.AutoShardedReactionBot`.
 
 ReactionBot
-~~~~~~~~~~~
-
-Class that you will probably use :)
+^^^^^^^^^^^
 
 .. autoclass:: discord.ext.reactioncommands.ReactionBot
     :members:
     :inherited-members: Bot
 
 AutoShardedReactionBot
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 Woah look at you bigshot. Imagine having a bot big enough to use
 :class:`.AutoShardedReactionBot` and looking at this :o

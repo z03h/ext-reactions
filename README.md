@@ -2,7 +2,8 @@
 Bot that can listen to reactions for commands.
 
 
-I'll finish this eventually and document it somewhere maybe.
+I'll finish this eventually and ~~document it somewhere maybe~~.
+[Nice, docs are here](https://extreactions.readthedocs.io/en/latest/) 😄
 ___
 Example code
 

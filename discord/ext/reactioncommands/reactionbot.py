@@ -17,14 +17,14 @@ __all__ = ('ReactionBot', 'AutoShardedReactionBot', 'ReactionBotMixin')
 class ReactionBotMixin(ReactionGroupMixin):
     """Mixin for implementing reaction commands to Bot"""
     def __init__(self, command_prefix, command_emoji, listening_emoji, *args,
-                 listen_timeout=15, listen_total_time=120, remove_reactions_after=True,
+                 listen_timeout=15, listen_total_timeout=120, remove_reactions_after=True,
                  **kwargs):
         if command_emoji == listening_emoji:
             raise ValueError('command_emoji and listening_emoji cannot be the same')
         self.command_emoji = command_emoji
         self.listening_emoji = listening_emoji
         self.listen_timeout = listen_timeout
-        self.listen_total_time = listen_total_time
+        self.listen_total_timeout = listen_total_timeout
         self.active_ctx_sesssions = Counter()
         self.remove_reactions_after = remove_reactions_after
         self.__debug = kwargs.get('_debug', False)
@@ -37,7 +37,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         """Functions exactly the same as original :meth:`get_context() <discord.ext.commands.Bot.get_context>`.
 
         Only difference is this function will attempt to set attribute
-        ``reaction_command`` to ``False`` to indicate it is a message command.
+        ``ctx.reaction_command`` to ``False`` to indicate it is a message command.
         """
         ctx = await super().get_context(message, cls=cls)
         try:
@@ -82,9 +82,11 @@ class ReactionBotMixin(ReactionGroupMixin):
         """Method that gets ``command_emoji`` or list of emojis that can be used to
         start listening for commands.
 
+        Reaction mirror to :meth:`Bot.get_prefix() <discord.ext.commands.Bot.get_prefix>`.
+
         Parameters
         ----------
-        payload: :class:`discord.RawReactionAction`
+        payload: :class:`discord.RawReactionActionEvent`
             payload to start getting context from
 
         Returns
@@ -101,7 +103,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        payload: :class:`discord.RawReactionAction`
+        payload: :class:`discord.RawReactionActionEvent`
             payload to start getting context from
 
         Returns
@@ -134,17 +136,20 @@ class ReactionBotMixin(ReactionGroupMixin):
         """Creates a :class:`discord.ext.reactioncommands.ReactionContext` from payload.
 
         A lot of weird sh*t happens here. If something is not cached, a proxy
-        object where only ``id`` is set or may have attributes set to other
-        proxy objects. These proxy objects `should` behave similar to
-        :class:`discord.PartialMessage` but subclassed from their originals.
+        object where only ``id`` is set is used instead. It may have attributes
+        set to other proxy objects. These proxy objects `should` behave similar
+        to :class:`discord.PartialMessage`, but subclassed from their originals.
+        Not every method will work so good luck :)
+
+        Reaction mirror to :meth:`Bot.get_context() <discord.ext.commands.Bot.get_context>`.
 
         Parameters
         ----------
-        payload: :class:`discord.RawReactionAction`
+        payload: :class:`discord.RawReactionActionEvent`
             payload to start getting context from
         cls:
             The class that will be used for the context.
-        check: Optional[Callable[:class:`discord.RawReactionAction`]]
+        check: Optional[Callable[:class:`discord.RawReactionActionEvent`]]
             Check that will be passed to ``wait_for``. Default check will
             return ``True`` for payload where ``payload.message_id == ctx.message.id
             and payload.user_id == ctx.author.id``.
@@ -178,7 +183,13 @@ class ReactionBotMixin(ReactionGroupMixin):
             if not await self.reaction_before_processing(ctx):
                 return ctx
             self.active_ctx_sesssions[ctx.message.id] += 1
-            emojis, end_early = await self._wait_for_emoji_stream(ctx, check=check)
+            try:
+                emojis, end_early = await asyncio.wait_for(self._wait_for_emoji_stream(ctx, check=check),
+                                                           timeout=self.listen_total_timeout)
+            except asyncio.TimeoutError:
+                emojis = ''
+                end_early = False
+
             self.active_ctx_sesssions[ctx.message.id] -= 1
 
             if not end_early:
@@ -194,9 +205,11 @@ class ReactionBotMixin(ReactionGroupMixin):
         return ctx
 
     async def process_reaction_commands(self, payload):
-        """Gets context and invokes from a payload. Takes :class:`payload <discord.RawReactionAction>`
+        """Gets context and invokes from a payload. Takes :class:`payload <discord.RawReactionActionEvent>`
         from :func:`on_raw_reaction_add() <discord.on_raw_reaction_add>` or
         :func:`on_raw_reaction_remove() <discord.on_raw_reaction_remove>`.
+
+        Reaction mirror to :meth:`Bot.process_commands() <discord.ext.commands.Bot.process_commands>`.
 
         .. note::
             If you overwrite :func:`on_raw_reaction_add() <discord.on_raw_reaction_add>`
@@ -205,7 +218,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        payload: :class:`discord.RawReactionAction`
+        payload: :class:`discord.RawReactionActionEvent`
             Payload to get context and invoke from.
         """
         context = await self.get_reaction_context(payload)
@@ -241,18 +254,13 @@ class ReactionBotMixin(ReactionGroupMixin):
             def check(payload):
                 return payload.message_id == ctx.message.id and payload.user_id == ctx.author.id
         command = []
-        if self.listen_total_time is not None:
-            cutoff = int(time.time()) + self.listen_total_time
+
         while True:
             tasks = (self.wait_for('raw_reaction_add', check=check),
                      self.wait_for('raw_reaction_remove', check=check))
             done, pending = await asyncio.wait([asyncio.create_task(t) for t in tasks],
                                                timeout=self.listen_timeout,
                                                return_when=asyncio.FIRST_COMPLETED)
-            if self.listen_total_time is not None:
-                current = int(time.time())
-                if current > cutoff:
-                    return '', False
             if done:
                 #user reacted
                 result = done.pop()
@@ -372,7 +380,7 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
     ----------
         command_emoji: Union[:class:`Callable`, :class:`list`, :class:`str`]
             Similar to command_prefix, but for starting emoji commands.
-            Can be a string, list of strings, or callable with the bot as its
+            Can be a string, list of strings, or callable/coroutine with the bot as its
             first parameter and :class:`discord.RawReactionActionEvent` as its
             second parameter. This callable should return a string or list of strings.
         listening_emoji: Union[:class:`Callable`, :class:`str`, :class:`None`]
@@ -383,7 +391,7 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
             Time in seconds that the bot will listen for emojis from a user.
             Will reset after each emoji added or removed. Pass ``None`` to disable.
             Default value is ``15``.
-        listen_total_time: Optional[:class:`int`]
+        listen_total_timeout: Optional[:class:`int`]
             Total time in seconds the bot will listen to a user. Prevents the user
             from adding or removing emojis and keeping the listen session active
             forever. Pass ``None`` to disable.

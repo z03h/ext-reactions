@@ -50,6 +50,28 @@ class ReactionCommandMixin:
         self.emojis = [emojis] if isinstance(emojis, str) else list(emojis)
 
     async def can_run(self, ctx):
+        """Overwritten to also raise
+        :exc:`ReactionOnlyCommand <discord.ext.reactioncommands.ReactionOnlyCommand>`
+        for commands that have :attr:`invoke_with_message <.ReactionCommand.invoke_with_message>`
+        set to ``False``.
+
+        Otherwise the same as :meth:`can_run() <discord.ext.commands.Command.can_run>`.
+
+        Parameters
+        ----------
+        ctx: :class:`Context <discord.ext.reactioncommands.ReactionContext>`
+            Context to check if it can run against.
+
+        Raises
+        ------
+        :class:`discord.ext.commands.CommandError`
+            Error for why command can't be run
+
+        Returns
+        -------
+        :class:`bool`
+            Whether or not the command can run.
+        """
         if not self.enabled:
             raise commands.DisabledCommand('{0.name} command is disabled'.format(self))
         if not getattr(ctx, 'reaction_command', False) and not self.invoke_with_message:
@@ -57,6 +79,17 @@ class ReactionCommandMixin:
         return await super().can_run(ctx)
 
     async def _parse_arguments(self, ctx):
+        """
+        .. Warning::
+            Argument converting has to change a lot for reaction
+            commands versus messages.
+
+            No way to get input so there is **no conversion** or parsing done here
+            unless it was invoked from a message.
+
+            When :class:`.ReactionCommand` or :class:`.ReactionGroup` is invoked from
+            a reaction, args will be filled with their default value or ``None``.
+        """
         is_reaction = getattr(ctx, 'reaction_command', False)
 
         if is_reaction:
@@ -112,14 +145,13 @@ class ReactionGroupMixin:
         try:
             if any(emoji in self.emoji_mapping for emoji in command.emojis):
                 raise commands.CommandRegistrationError(' '.join(command.emojis))
-            for emoji in command.emojis:
-                self.emoji_mapping[emoji] = command
             try:
                 super().add_command(command)
             except Exception as e:
-                for emoji in command.emojis:
-                    self.emoji_mapping.pop(emoji, None)
                 raise e
+            else:
+                for emoji in command.emojis:
+                    self.emoji_mapping[emoji] = command
         except AttributeError as e:
             super().add_command(command)
 
@@ -247,11 +279,12 @@ class ReactionGroupMixin:
         return decorator
 
 class ReactionCommand(ReactionCommandMixin, commands.Command):
-    """Basically the same as :class:`commands.Command <discord.ext.commands.Command>` but
-    with modified invoke flow to allow emojis. Can be invoked with normal messages
-    or reactions by default.
+    """Basically the same as :class:`commands.Command <discord.ext.commands.Command>`
+    but with modified invoke flow to allow reaction invoke. Can be invoked with
+    messages or reactions by default.
 
-    ``args`` and ``kwargs`` should be the same as :class:`commands.Command <discord.ext.commands.Command>`.
+    Other``args`` and ``kwargs`` should be the same as
+    :class:`commands.Command <discord.ext.commands.Command>`.
 
     Attributes
     ----------
@@ -267,10 +300,11 @@ class ReactionCommand(ReactionCommandMixin, commands.Command):
 
 class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
     """Basically the same as :class:`commands.Group <discord.ext.commands.Group>` but
-    with modified invoke flow to allow emojis. Can be invoked with normal messages
-    or reactions by default.
+    with modified invoke flow to allow reaction invoke. Can be invoked with
+    messages or reactions by default.
 
-    ``args`` and ``kwargs`` should be the same as :class:`commands.Group <discord.ext.commands.Group>`.
+    Other ``args`` and ``kwargs`` should be the same as
+    :class:`commands.Group <discord.ext.commands.Group>`.
 
     Attributes
     ----------
@@ -316,16 +350,17 @@ class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
             await super().invoke(ctx)
 
 def reaction_command(emojis, name=None, cls=None, **attrs):
-    """Decorator that creates a command.
+    """Decorator that creates a command. Default class is :class:`.ReactionCommand`.
 
-    ``args`` and ``kwargs`` should be the same as normal :func:`@commands.command() <discord.ext.commands.command>`.
+    ``**attrs`` should be the same as
+    :func:`@commands.command() <discord.ext.commands.command>`.
 
     Parameters
     ----------
     emojis: Union[:class:`list`, :class:`str`]
         An emoji or list of emojis that can be used to invoke this command.
     invoke_with_message: Optional[:class:`bool`]
-        Whether the command can be invoke with messages. Default value is ``True``.
+        Whether the command can be invoked from messages. Default value is ``True``.
     Returns
     -------
     :class:`Callable`
@@ -342,16 +377,18 @@ def reaction_command(emojis, name=None, cls=None, **attrs):
     return decorator
 
 def reaction_group(emojis, name=None, **attrs):
-    """Decorator that creates a group.
+    """Decorator that creates a group. Sets the ``cls`` kwarg to
+    :class:`.ReactionGroup`.
 
-    ``args`` and ``kwargs`` should be the same as normal :func:`@commands.group() <discord.ext.commands.group>`.
+    ``**attrs`` should be the same as
+    :func:`@commands.group() <discord.ext.commands.group>`.
 
     Parameters
     ----------
     emojis: Union[:class:`list`, :class:`str`]
         An emoji or list of emojis that can be used to invoke this command.
     invoke_with_message: Optional[:class:`bool`]
-        Whether the command can be invoke with messages. Default value is ``True``.
+        Whether the command can be invoked from messages. Default value is ``True``.
     Returns
     -------
     :class:`Callable`

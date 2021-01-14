@@ -4,6 +4,7 @@ Extension to discord.py Bot that adds reaction commands.
 
 I'll finish this eventually and ~~document it somewhere maybe~~.
 [Nice, docs are here](https://extreactions.readthedocs.io/en/latest/) 😄
+
 [![Documentation Status](https://readthedocs.org/projects/extreactions/badge/?version=latest)](https://extreactions.readthedocs.io/en/latest/?badge=latest)
 
 ___

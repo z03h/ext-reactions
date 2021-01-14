@@ -101,7 +101,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         return await self._get_x_emoji(payload, attr='command_emoji')
 
     async def get_listening_emoji(self, payload):
-        """Method that gets the listening_emoji that is used for group invoke
+        """Method that gets :attr:`.listening_emoji` that is used for group invoke
         and letting the user know the bot is listening.
 
         Parameters

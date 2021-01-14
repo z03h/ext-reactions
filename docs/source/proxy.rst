@@ -23,6 +23,9 @@ Just has :attr:`.ProxyBase.id` and ``_state`` set.
 Subclassed proxies
 ------------------
 
+All of these should behave similar to :class:`discord.PartialMessage` except
+attributes aren't filled out. Only methods should really work.
+
 .. automodule:: discord.ext.reactioncommands.reactionproxy
     :members:
     :exclude-members: ProxyBase

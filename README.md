@@ -1,5 +1,5 @@
-# Reaction Command extension
-Extension to discord.py Bot that adds reaction commands.
+# Reaction Commands Extension
+Extension to discord.py Bot that adds reaction based commands.
 
 
 I'll finish this eventually and ~~document it somewhere maybe~~.

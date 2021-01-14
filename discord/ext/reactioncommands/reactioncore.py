@@ -126,10 +126,35 @@ class ReactionCommandMixin:
 
 
 class ReactionGroupMixin:
+    """Mixin to for ReactionGroups.
+
+    Implements reaction group functionality for :class:`.ReactionBot` and
+    :class:`.ReactionGroup`.
+
+    Parameters
+    ----------
+    case_insensitive: Optional[:class:`bool`]
+        In addition to making normal commands case insensitive, attempts to
+        normalize emojis by removing different skin colored and gendered
+        modifiers when being invoked.
+
+        Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
+    """
 
     def __init__(self, *args, **kwargs):
         self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('case_insensitive') else {}
         super().__init__(*args, **kwargs)
+
+    @property
+    def emoji_commands(self):
+        """Unique set of :class:`.ReactionCommand`\ s registered
+
+        Returns
+        -------
+        set[:class:`.ReactionCommand`]
+            Registered :class:`.ReactionCommand`\ s
+        """
+        return set(self.emoji_mapping.values())
 
     def add_command(self, command):
         """Adds a command to the internal list.
@@ -137,9 +162,12 @@ class ReactionGroupMixin:
         If the command being passed has attribute ``emojis``, will be treated as
         an instance of :class:`.ReactionCommand`.
 
+        Adds :attr:`.ReactionCommand.emojis` to the internal mapping of
+        reaction commands.
+
         Parameters
         ----------
-        command: :class:`Command <.commands.Command>`
+        command: :class:`commands.Command <discord.ext.commands.Command>`
             The command to add
         """
         try:
@@ -158,8 +186,8 @@ class ReactionGroupMixin:
     def remove_command(self, name):
         """Remove a command to the internal list by name.
 
-        Attempts to remove :attr:`emojis <.ReactionCommand.emojis>`
-        from the internal mapping of ``emoji: Command``. Be wary of manually updating
+        Attempts to remove :attr:`emojis <.ReactionCommand.emojis>` from the
+        internal mapping of ``emoji: Command``. Be wary of manually updating
         :attr:`emojis <.ReactionCommand.emojis>`.
 
         Parameters
@@ -169,7 +197,7 @@ class ReactionGroupMixin:
 
         Returns
         -------
-        Optional[:class:`Command <.commands.Command>`]
+        Optional[:class:`commands.Command <discord.ext.commands.Command>`]
             The command that was removed
         """
         command = self.all_commands.pop(name, None)
@@ -226,7 +254,6 @@ class ReactionGroupMixin:
                 return None
         return obj
 
-
     def reaction_command(self, emojis, *args, **kwargs):
         """Decorator that creates and adds a command to the internal list of
         commands. Calls :func:`@reaction_command() <.reaction_command>`.
@@ -279,12 +306,12 @@ class ReactionGroupMixin:
         return decorator
 
 class ReactionCommand(ReactionCommandMixin, commands.Command):
-    """Basically the same as :class:`.commands.Command`
+    """Basically the same as :class:`commands.Command <discord.ext.commands.Command>`
     but with modified argument conversion flow to allow reaction invoke. Can be
     invoked with messages or reactions by default.
 
     Other ``args`` and ``kwargs`` should be the same as
-    :class:`.commands.Command`.
+    :class:`commands.Command <discord.ext.commands.Command>`.
 
     Attributes
     ----------
@@ -299,8 +326,8 @@ class ReactionCommand(ReactionCommandMixin, commands.Command):
 
 
 class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
-    """Basically the same as :class:`.commands.Group` but
-    with modified argument conversion flow to allow reaction invoke. Can be
+    """Basically the same as :class:`commands.Group <discord.ext.commands.Group>`
+    but with modified argument conversion flow to allow reaction invoke. Can be
     invoked with messages or reactions by default.
 
     Other ``args`` and ``kwargs`` should be the same as
@@ -314,6 +341,12 @@ class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
     invoke_with_message: Optional[:class:`bool`]
         Whether the command can be invoked with messages or not. Pass ``False``
         to only allow reaction invoke. Default value is ``True``.
+    case_insensitive: Optional[:class:`bool`]
+        In addition to making normal commands case insensitive, attempts to
+        normalize emojis by removing different skin colored and gendered
+        modifiers when being invoked.
+
+        Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
     """
     async def invoke(self, ctx):
         is_reaction = getattr(ctx, 'reaction_command', False)
@@ -390,6 +423,12 @@ def reaction_group(emojis, name=None, **attrs):
         An emoji or list of emojis that can be used to invoke this command.
     invoke_with_message: Optional[:class:`bool`]
         Whether the command can be invoked from messages. Default value is ``True``.
+    case_insensitive: Optional[:class:`bool`]
+        In addition to making normal commands case insensitive, attempts to
+        normalize emojis by removing different skin colored and gendered
+        modifiers when being invoked.
+
+        Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
 
     Returns
     -------

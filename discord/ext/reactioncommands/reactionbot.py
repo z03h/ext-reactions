@@ -19,8 +19,6 @@ class ReactionBotMixin(ReactionGroupMixin):
     def __init__(self, command_prefix, command_emoji, listening_emoji, *args,
                  listen_timeout=15, listen_total_timeout=120, remove_reactions_after=True,
                  **kwargs):
-        if command_emoji == listening_emoji:
-            raise ValueError('command_emoji and listening_emoji cannot be the same')
         self.command_emoji = command_emoji
         self.listening_emoji = listening_emoji
         self.listen_timeout = listen_timeout
@@ -34,10 +32,15 @@ class ReactionBotMixin(ReactionGroupMixin):
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
     async def get_context(self, message, *, cls=commands.Context):
-        """Functions exactly the same as original :meth:`.commands.Bot.get_context`.
+        """Functions exactly the same as original :meth:`discord.ext.commands.Bot.get_context`.
 
         Only difference is this function will attempt to set attribute
-        ``ctx.reaction_command`` to ``False`` to indicate it is a message command.
+        `ctx.reaction_command`` to ``False`` to indicate it is a message command.
+
+        Returns
+        -------
+        :class:`Context <discord.ext.commands.Context>`
+            The context from message
         """
         ctx = await super().get_context(message, cls=cls)
         try:
@@ -79,10 +82,10 @@ class ReactionBotMixin(ReactionGroupMixin):
         return ret
 
     async def get_command_emoji(self, payload):
-        """Method that gets ``command_emoji`` or list of emojis that can be used to
-        start listening for commands.
+        """Method that gets the :attr:`.ReactionBot.command_emoji` or list of
+        emojis that can be used to start listening for commands.
 
-        Reaction mirror to :meth:`.commands.Bot.get_prefix`.
+        Reaction mirror to :meth:`discord.ext.commands.Bot.get_prefix`.
 
         Parameters
         ----------
@@ -141,7 +144,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         to :class:`discord.PartialMessage`, but subclassed from their originals.
         Not every method will work so good luck :)
 
-        Reaction mirror to :meth:`.commands.Bot.get_context`.
+        Reaction mirror to :meth:`discord.ext.commands.Bot.get_context`.
 
         Parameters
         ----------
@@ -209,11 +212,11 @@ class ReactionBotMixin(ReactionGroupMixin):
         from :func:`raw_reaction_add <discord.on_raw_reaction_add>` or
         :func:`raw_reaction_remove <discord.on_raw_reaction_remove>`.
 
-        Reaction mirror to :meth:`.commands.Bot.process_commands`.
+        Reaction mirror to :meth:`discord.ext.commands.Bot.process_commands`.
 
         .. note::
             If you overwrite :func:`raw_reaction_add <discord.on_raw_reaction_add>`
-            or :meth:`.commands.Bot.event`,
+            or :meth:`discord.ext.commands.Bot.event`,
             don't forget to add this so reaction commands will still work.
 
         Parameters
@@ -372,9 +375,9 @@ class ReactionBotMixin(ReactionGroupMixin):
 
 class ReactionBot(ReactionBotMixin, commands.Bot):
     """Discord Bot subclass that adds reaction commands.
-    Subclass of :class:`.commands.Bot`.
+    Subclass of :class:`discord.ext.commands.Bot`.
 
-    All other ``args`` and ``kwargs`` should be the same as :class:`.commands.Bot`.
+    All other ``args`` and ``kwargs`` should be the same as :class:`discord.ext.commands.Bot`.
 
     Attributes
     ----------
@@ -411,6 +414,6 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
 
 class AutoShardedReactionBot(ReactionBotMixin, commands.AutoShardedBot):
     """Sharded version of ReactionBot. IDK, probably works. Subclass of
-    :class:`.commands.AutoShardedBot`.
+    :class:`discord.ext.commands.AutoShardedBot`.
     """
     pass

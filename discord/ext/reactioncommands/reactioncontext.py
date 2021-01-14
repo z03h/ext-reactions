@@ -10,7 +10,7 @@ class ReactionContext(commands.Context):
 
     Attributes
     ----------
-    author: Union[:class:`discord.Member`, :class:`discord.User`, :class:`ProxyBase <discord.ext.reactioncommands.reactionproxy.ProxyBase>`]
+    author: Union[:class:`discord.Member`, :class:`discord.User`, :class:`.ProxyBase`]
 
         .. Warning::
             This is **not the message author**. It is the user who added reactions.
@@ -23,7 +23,7 @@ class ReactionContext(commands.Context):
             There's no full message from :class:`payload <discord.RawReactionActionEvent>`,
             so ``ctx.message`` is a :class:`discord.PartialMessage`. This
             PartialMessage's ``channel`` and ``guild`` attributes might be
-            a :class:`ProxyBase <discord.ext.reactioncommands.reactionproxy.ProxyBase>`
+            a :class:`.ProxyBase`
             and becuase of that ``ctx.channel`` and ``ctx.guild`` might also be.
 
     reaction_command: :class:`bool`
@@ -87,7 +87,7 @@ class ReactionContext(commands.Context):
         return self.message
 
     def get(self, *, reverse=True):
-        """Searches :attr:`.commands.Bot.cached_messages`
+        """Searches :attr:`discord.ext.commands.Bot.cached_messages`
         for a message where ``ctx.message.id == message.id``. Returns ``None``
         if the message was not found.
 

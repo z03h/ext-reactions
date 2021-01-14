@@ -1,8 +1,9 @@
-.. currentmodule:: discord
+.. currentmodule:: discord.ext
 
 API Reference
 =============
 
+:class:`.Bot`
 Bot
 ^^^
 
@@ -56,8 +57,9 @@ ReactionCommand
 ^^^^^^^^^^^^^^^^
 
 ReactionCommand classes and other related stuff. Mostly behave like normal
-commands. Pretty much difference is :attr:`emojis <.ReactionCommand.emojis>`
-and altered :meth:`_parse_arguments <.ReactionCommand._parse_arguments>`.
+commands. Only big difference is :attr:`emojis <.ReactionCommand.emojis>`
+and altered :meth:`_parse_arguments <.ReactionCommand._parse_arguments>` for
+argument parsing.
 
 Decorators
 ~~~~~~~~~~
@@ -71,6 +73,8 @@ Decorators for adding commands in cogs.
 
 Command Classes
 ~~~~~~~~~~~~~~~
+
+.. autoclass:: discord.ext.reactioncommands.ReactionGroupMixin
 
 ReactionCommand
 ---------------

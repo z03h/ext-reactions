@@ -13,8 +13,8 @@ Extremely `pepega <https://www.streamscheme.com/wp-content/uploads/2020/04/pepeg
 Should be 100% compatible with normal discord.py commands. Tried to make reaction
 commands as similar as I could to base commands in discord.py.
 
-Only stuff that's been modified is here, everything else is the same and you
-should use `discord.py docs <https://discordpy.readthedocs.io/en/latest/index.html>`_
+Only stuff that's been modified is here, everything else is the same and you should
+use :doc:`Discord.py Docs <dpy:index>`
 for anything that's not found here.
 
 Install with pip:

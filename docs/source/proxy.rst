@@ -9,33 +9,21 @@ These are pretty crap and literally just set :attr:`.ProxyBase.id` and ``_state`
 These exist to try and fill in gaps between :class:`discord.RawReactionActionEvent`
 and :class:`discord.Message`.
 
-Stuff like ``ProxyUser.send()`` should work, but ``ProxyUser.name`` will error.
+Methods such as ``ProxyUser.send()`` should work, but attributes such as
+``ProxyUser.name`` will error.
 
-ProxyBase
-^^^^^^^^^
+Proxy Base
+^^^^^^^^^^
+
+Just has :attr:`.ProxyBase.id` and ``_state`` set.
 
 .. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyBase
     :members:
 
-Proxy Subclasses
-~~~~~~~~~~~~~~~~
+Subclassed proxies
+------------------
 
-.. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyUser
+.. automodule:: discord.ext.reactioncommands.reactionproxy
     :members:
-    :inherited-members: User
-
-.. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyMember
-    :members:
-    :inherited-members: Member
-
-.. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyTextChannel
-    :members:
-    :inherited-members: TextChannel
-
-.. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyDMChannel
-    :members:
-    :inherited-members: DMChannel
-
-.. autoclass:: discord.ext.reactioncommands.reactionproxy.ProxyGuild
-    :members:
-    :inherited-members: Guild
+    :exclude-members: ProxyBase
+    :show-inheritance:

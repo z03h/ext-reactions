@@ -159,7 +159,7 @@ class ReactionGroupMixin:
     def add_command(self, command):
         """Adds a command to the internal list.
 
-        If the command being passed has attribute ``emojis``, will be treated as
+        If the command passed has attribute ``emojis``, will be treated as
         an instance of :class:`.ReactionCommand`.
 
         Adds :attr:`.ReactionCommand.emojis` to the internal mapping of
@@ -211,8 +211,8 @@ class ReactionGroupMixin:
             return command
         # only remove emojis if we fully remove the command
         try:
-            if cmd and command:
-                for emoji in cmd.emojis:
+            if name and command:
+                for emoji in command.emojis:
                     self.emoji_mapping.pop(emoji, None)
         except AttributeError:
             pass

@@ -3,7 +3,6 @@
 API Reference
 =============
 
-:class:`.Bot`
 Bot
 ^^^
 
@@ -103,9 +102,9 @@ cannot be resolved to a matching object.
 Ex: A :class:`ProxyMember <discord.ext.reactioncommands.reactionproxy.ProxyMember>`
 or :class:`ProxyUser <discord.ext.reactioncommands.reactionproxy.ProxyUser>`
 may be used instead of :class:`discord.Member` or :class:`discord.User` if
-:meth:`get_member <discord.ext.commands.Bot.get_member>` or
-:meth:`get_user <discord.ext.commands.Bot.get_user>` return ``None`` and
-:attr:`payload.member <discord.RawReactionActionEvent.member>` is ``None``.
+:meth:`~discord.Guild.get_member` or :meth:`~discord.ext.commands.Bot.get_user`
+return ``None`` and :attr:`payload.member <discord.RawReactionActionEvent.member>`
+is ``None``.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionContext
     :members:

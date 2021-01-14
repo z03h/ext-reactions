@@ -87,7 +87,7 @@ class ReactionContext(commands.Context):
         return self.message
 
     def get(self, *, reverse=True):
-        """Searches :attr:`discord.ext.commands.Bot.cached_messages`
+        """Searches :attr:`Bot.cached_messages <discord.ext.commands.Bot.cached_messages>`
         for a message where ``ctx.message.id == message.id``. Returns ``None``
         if the message was not found.
 

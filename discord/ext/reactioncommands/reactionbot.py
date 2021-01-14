@@ -32,14 +32,14 @@ class ReactionBotMixin(ReactionGroupMixin):
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
     async def get_context(self, message, *, cls=commands.Context):
-        """Functions exactly the same as original :meth:`discord.ext.commands.Bot.get_context`.
+        """Functions exactly the same as original :meth:`~discord.ext.commands.Bot.get_context`.
 
         Only difference is this function will attempt to set attribute
-        `ctx.reaction_command`` to ``False`` to indicate it is a message command.
+        ``ctx.reaction_command`` to ``False`` to indicate it is a message command.
 
         Returns
         -------
-        :class:`Context <discord.ext.commands.Context>`
+        :class:`~discord.ext.commands.Context`
             The context from message
         """
         ctx = await super().get_context(message, cls=cls)
@@ -85,7 +85,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         """Method that gets the :attr:`.ReactionBot.command_emoji` or list of
         emojis that can be used to start listening for commands.
 
-        Reaction mirror to :meth:`discord.ext.commands.Bot.get_prefix`.
+        Reaction mirror to :meth:`~discord.ext.commands.Bot.get_prefix`.
 
         Parameters
         ----------
@@ -124,7 +124,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`.reactioncommands.ReactionContext`
+        ctx: :class:`~.reactioncommands.ReactionContext`
             context to invoke
         """
         await self.reaction_after_processing(ctx)
@@ -136,7 +136,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
 
     async def get_reaction_context(self, payload, *, cls=ReactionContext, check=None):
-        """Creates a :class:`.reactioncommands.ReactionContext` from payload.
+        """Creates a :class:`~.reactioncommands.ReactionContext` from payload.
 
         A lot of weird sh*t happens here. If something is not cached, a proxy
         object where only ``id`` is set is used instead. It may have attributes
@@ -144,7 +144,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         to :class:`discord.PartialMessage`, but subclassed from their originals.
         Not every method will work so good luck :)
 
-        Reaction mirror to :meth:`discord.ext.commands.Bot.get_context`.
+        Reaction mirror to :meth:`~discord.ext.commands.Bot.get_context`.
 
         Parameters
         ----------
@@ -159,7 +159,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Returns
         -------
-        :class:`.reactioncommands.ReactionContext`
+        :class:`~.reactioncommands.ReactionContext`
             The context to invoke.
         """
         command_emoji = await self.get_command_emoji(payload)
@@ -209,14 +209,14 @@ class ReactionBotMixin(ReactionGroupMixin):
 
     async def process_reaction_commands(self, payload):
         """Gets context and invokes from a payload. Takes :class:`payload <discord.RawReactionActionEvent>`
-        from :func:`raw_reaction_add <discord.on_raw_reaction_add>` or
-        :func:`raw_reaction_remove <discord.on_raw_reaction_remove>`.
+        from :func:`~discord.on_raw_reaction_add` or
+        :func:`~discord.on_raw_reaction_remove`.
 
-        Reaction mirror to :meth:`discord.ext.commands.Bot.process_commands`.
+        Reaction mirror to :meth:`~discord.ext.commands.Bot.process_commands`.
 
         .. note::
             If you overwrite :func:`raw_reaction_add <discord.on_raw_reaction_add>`
-            or :meth:`discord.ext.commands.Bot.event`,
+            or use :meth:`discord.ext.commands.Bot.event` to overwrite,
             don't forget to add this so reaction commands will still work.
 
         Parameters
@@ -310,7 +310,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`.reactioncommands.ReactionContext`
+        ctx: :class:`~.reactioncommands.ReactionContext`
             Context that may be invoked.
 
         Returns
@@ -345,7 +345,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`.reactioncommands.ReactionContext`
+        ctx: :class:`~.reactioncommands.ReactionContext`
             Context that will be invoked.
         """
         await self._mc.release(ctx)

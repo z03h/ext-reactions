@@ -1,9 +1,11 @@
-# Reaction Command Bot
-Bot that can listen to reactions for commands.
+# Reaction Command extension
+Extension to discord.py Bot that adds reaction commands.
 
 
 I'll finish this eventually and ~~document it somewhere maybe~~.
 [Nice, docs are here](https://extreactions.readthedocs.io/en/latest/) 😄
+[![Documentation Status](https://readthedocs.org/projects/extreactions/badge/?version=latest)](https://extreactions.readthedocs.io/en/latest/?badge=latest)
+
 ___
 Example code
 
@@ -108,6 +110,7 @@ ___
 
 Why would you use this?
 
-You wouldn't, but you can use/subclass `ReactionBot` and it should behave like a normal `ext.commands.Bot`.
+You wouldn't, but you can use/subclass `ReactionBot` and it should behave
+like a normal `ext.commands.Bot`.
 
 ~~You can make Bot commands without message intent, so it has that going for it~~

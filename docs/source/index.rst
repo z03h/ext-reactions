@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-ext.reactions Docs
+ext-reactions Docs
 =============================================
 
 Extension for discord.py that adds reaction commands.
@@ -21,34 +21,35 @@ Install with pip:
 
 .. code-block:: sh
 
-    python3 -m pip install -U git+https://github.com/z03h/ReactionCommandBot@master
-    py -3 -m pip install -U git+https://github.com/z03h/ReactionCommandBot@master
+    python3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
 
-`Github Source <https://github.com/z03h/ReactionCommandBot>`_
+    # or windows
+    py -3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
+
+`Github Source <https://github.com/z03h/ext-reactions>`_
 
 General Stuff
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
    quickstart.rst
 
 API Reference
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 1
 
-   bot.rst
-   command.rst
-   context.rst
+   api.rst
+   proxy.rst
 
 Other
 ^^^^^
 
 * :ref:`search`
 
-Anyways, here's a huge wall of example code:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Anyways, here's a huge wall of example code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: python
 
     import asyncio

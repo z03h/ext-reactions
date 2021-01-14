@@ -1,9 +1,11 @@
 .. currentmodule discord
 
-ReactionCommand Reference
+ReactionCommand Refernce
 =========================
 
-ReactionCommand classes and other related stuff.
+ReactionCommand classes and other related stuff. Mostly behave like normal
+commands. Pretty much difference is :attr:`emojis <.ReactionCommand.emojis>`
+and altered :meth:`_parse_arguments <.ReactionCommand._parse_arguments>`.
 
 Decorators
 ~~~~~~~~~~

@@ -34,7 +34,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
     async def get_context(self, message, *, cls=commands.Context):
-        """Functions exactly the same as original :meth:`get_context() <discord.ext.commands.Bot.get_context>`.
+        """Functions exactly the same as original :meth:`.commands.Bot.get_context`.
 
         Only difference is this function will attempt to set attribute
         ``ctx.reaction_command`` to ``False`` to indicate it is a message command.
@@ -82,7 +82,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         """Method that gets ``command_emoji`` or list of emojis that can be used to
         start listening for commands.
 
-        Reaction mirror to :meth:`Bot.get_prefix() <discord.ext.commands.Bot.get_prefix>`.
+        Reaction mirror to :meth:`.commands.Bot.get_prefix`.
 
         Parameters
         ----------
@@ -110,7 +110,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         -------
         Optional[:class:`str`]
             A single emoji or ``None``. If not ``None`` the bot will add as a
-            reacton to indicate it is listening for reactions.
+            reaction to indicate it is listening for reactions.
         """
         if self.listening_emoji is None:
             return None
@@ -121,7 +121,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`discord.ext.reactioncommands.ReactionContext`
+        ctx: :class:`.reactioncommands.ReactionContext`
             context to invoke
         """
         await self.reaction_after_processing(ctx)
@@ -133,7 +133,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
 
     async def get_reaction_context(self, payload, *, cls=ReactionContext, check=None):
-        """Creates a :class:`discord.ext.reactioncommands.ReactionContext` from payload.
+        """Creates a :class:`.reactioncommands.ReactionContext` from payload.
 
         A lot of weird sh*t happens here. If something is not cached, a proxy
         object where only ``id`` is set is used instead. It may have attributes
@@ -141,7 +141,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         to :class:`discord.PartialMessage`, but subclassed from their originals.
         Not every method will work so good luck :)
 
-        Reaction mirror to :meth:`Bot.get_context() <discord.ext.commands.Bot.get_context>`.
+        Reaction mirror to :meth:`.commands.Bot.get_context`.
 
         Parameters
         ----------
@@ -156,7 +156,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Returns
         -------
-        :class:`discord.ext.reactioncommands.ReactionContext`
+        :class:`.reactioncommands.ReactionContext`
             The context to invoke.
         """
         command_emoji = await self.get_command_emoji(payload)
@@ -206,14 +206,14 @@ class ReactionBotMixin(ReactionGroupMixin):
 
     async def process_reaction_commands(self, payload):
         """Gets context and invokes from a payload. Takes :class:`payload <discord.RawReactionActionEvent>`
-        from :func:`on_raw_reaction_add() <discord.on_raw_reaction_add>` or
-        :func:`on_raw_reaction_remove() <discord.on_raw_reaction_remove>`.
+        from :func:`raw_reaction_add <discord.on_raw_reaction_add>` or
+        :func:`raw_reaction_remove <discord.on_raw_reaction_remove>`.
 
-        Reaction mirror to :meth:`Bot.process_commands() <discord.ext.commands.Bot.process_commands>`.
+        Reaction mirror to :meth:`.commands.Bot.process_commands`.
 
         .. note::
-            If you overwrite :func:`on_raw_reaction_add() <discord.on_raw_reaction_add>`
-            or :meth:`@Bot.event <discord.ext.commands.Bot.event>`,
+            If you overwrite :func:`raw_reaction_add <discord.on_raw_reaction_add>`
+            or :meth:`.commands.Bot.event`,
             don't forget to add this so reaction commands will still work.
 
         Parameters
@@ -307,7 +307,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`discord.ext.reactoncommands.ReactionContext`
+        ctx: :class:`.reactioncommands.ReactionContext`
             Context that may be invoked.
 
         Returns
@@ -342,7 +342,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Parameters
         ----------
-        ctx: :class:`discord.ext.reactoncommands.ReactionContext`
+        ctx: :class:`.reactioncommands.ReactionContext`
             Context that will be invoked.
         """
         await self._mc.release(ctx)
@@ -372,9 +372,9 @@ class ReactionBotMixin(ReactionGroupMixin):
 
 class ReactionBot(ReactionBotMixin, commands.Bot):
     """Discord Bot subclass that adds reaction commands.
-    Subclass of :class:`commands.Bot <discord.ext.commands.Bot>`.
+    Subclass of :class:`.commands.Bot`.
 
-    All other ``args`` and ``kwargs`` should be the same as :class:`commands.Bot <discord.ext.commands.Bot>`.
+    All other ``args`` and ``kwargs`` should be the same as :class:`.commands.Bot`.
 
     Attributes
     ----------
@@ -385,7 +385,7 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
             second parameter. This callable should return a string or list of strings.
         listening_emoji: Union[:class:`Callable`, :class:`str`, :class:`None`]
             Same as command_emoji. Can be ``None`` if you don't want to invoke
-            emoji groups with reactions or to add a reaction on every
+            emoji groups with reactions or add a reaction on every
             :attr:`command_emoji` reaction.
         listen_timeout: Optional[:class:`int`]
             Time in seconds that the bot will listen for emojis from a user.
@@ -402,13 +402,15 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
         case_insensitive: Optional[:class:`bool`]
             In addition to making normal commands case insensitive, attempts to
             normalize emojis by removing different skin colored and gendered
-            modifiers when being invoked. Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
+            modifiers when being invoked.
+
+            Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
     """
     pass
 
 
 class AutoShardedReactionBot(ReactionBotMixin, commands.AutoShardedBot):
     """Sharded version of ReactionBot. IDK, probably works. Subclass of
-    :class:`commands.AutoShardedBot <discord.ext.commands.AutoShardedBot>`.
+    :class:`.commands.AutoShardedBot`.
     """
     pass

@@ -27,7 +27,7 @@ if version.endswith(('a', 'b', 'rc')):
     except Exception:
         pass
 
-setup(name='ext.reactions',
+setup(name='ext-reactions',
       author='z03h',
       url='https://github.com/z03h/ReactionCommandBot',
       version=version,

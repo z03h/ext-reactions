@@ -5,6 +5,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import re
+import sphinx_rtd_theme
 
 # -- Path setup --------------------------------------------------------------
 
@@ -19,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'ext.reactions'
+project = 'ext-reactions'
 copyright = '2021, z03h'
 author = 'z03h'
 
@@ -36,6 +37,7 @@ needs_sphinx = '3.4.3'
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.intersphinx',
               'sphinx.ext.napoleon',
+              'sphinx_rtd_theme',
               ]
 intersphinx_mapping = {
   'py': ('https://docs.python.org/3', None),
@@ -58,7 +60,12 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'nature'
+html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    "style_external_links": True,
+    "prev_next_buttons_location": "both",
+    "navigation_depth": -1,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

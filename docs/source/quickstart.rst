@@ -1,13 +1,63 @@
-.. currentmodule discord
-
-Example code too long, didn't read
-==================================
+.. currentmodule:: discord
 
 Quickstart
+==========
 
-TL;DR
+Short Examples
+^^^^^^^^^^^^^^
 
-Simple command::
+Import
+~~~~~~
+
+.. code-block:: python
+
+    from discord.ext import reactioncommands
+
+or specific things
+
+.. code-block:: python
+
+    from discord.ext.reactioncommands import reaction_command, reaction_group
+
+Create bot
+~~~~~~~~~~
+
+.. code-block:: python
+
+    bot = reactioncommands.ReactionBot(prefix, command_emoji, listening_emoji)
+
+Use decorators to add commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:meth:`@ReactionBot.reaction_command(emoji) <discord.ext.reactioncommands.ReactionBot.reaction_command>`
+or :meth:`@ReactionBot.reaction_group(emoji) <discord.ext.reactioncommands.ReactionBot.reaction_group>`
+to create a reaction command. If you're in a cog, use the decorators
+:func:`@reactioncommands.reaction_command(emoji) <discord.ext.reactioncommands.reaction_command>` or
+:func:`@reactioncommands.reaction_group(emoji) <discord.ext.reactioncommands.reaction_group>`.
+
+.. code-block:: python
+
+    @bot.reaction_command("🤔")
+    async def something(ctx):
+        pass
+
+or in a cog
+
+.. code-block:: python
+
+    class ReactionCog(commands.Cog):
+        @reaction_command("🤔")
+        async def something(self, ctx):
+            pass
+
+
+Short-ish code examples
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Simple command
+~~~~~~~~~~~~~~
+
+.. code-block:: python
 
     from discord.ext import reactioncommands
 
@@ -22,7 +72,10 @@ Simple command::
 
     # Don't forget bot.run(TOKEN)
 
-Cogs::
+Cogs
+~~~~
+
+.. code-block:: python
 
     import discord
     from discord.ext import commands, reactioncommands
@@ -39,11 +92,14 @@ Cogs::
             # invoked from reactions.
             member = member or ctx.author
 
-            await ctx.send(f"🎉 Tada 🎉")
+            await ctx.send(f"🎉🎉 {member.id} 🎉🎉")
 
     # Don't forget to add setup(bot)
 
-Multiple emojis in the name or emoji aliases::
+Multiple emojis in the name or emoji aliases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
 
     @bot.reaction_command(["👋👋", "👋👋👋"])
     async def hi(ctx):
@@ -51,7 +107,10 @@ Multiple emojis in the name or emoji aliases::
         # invoked the command with, so 👋👋 or 👋👋👋.
         await ctx.send(f"{ctx.prefix} {ctx.author}")
 
-Groups::
+Groups
+~~~~~~
+
+.. code-block:: python
 
     @bot.reaction_group("👋", invoke_without_command=True)
     async def hi(ctx):
@@ -61,8 +120,11 @@ Groups::
     async def bye(ctx):
         await ctx.send(f"Oh! Sorry to see you go {ctx.author} :(")
 
-Mixing :class:`ReactionCommands <discord.ext.reactioncommands.ReactionCommand>`
-with :class:`Commands <discord.ext.commands.Command>`::
+Mixing :class:`ReactionCommands <discord.ext.reactioncommands.ReactionCommand>` with :class:`Commands <discord.ext.commands.Command>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
 
     @bot.reaction_group("👋", invoke_without_command=True)
     async def hi(ctx):
@@ -73,7 +135,15 @@ with :class:`Commands <discord.ext.commands.Command>`::
     async def hihi(ctx):
         await ctx.send(f"HiHiHi there {ctx.author}")
 
-Case insensitive::
+    # reaction command that can only be invoked with reactions
+    @hi.reaction_command("🇭🇮", invoke_with_message=False)
+    async def _hihi(ctx):
+        await ctx.send("🇭🇮 👋")
+
+Case insensitive
+~~~~~~~~~~~~~~~~
+
+.. code-block:: python
 
     from discord.ext import reactioncommands
 

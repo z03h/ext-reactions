@@ -10,8 +10,7 @@ class ReactionContext(commands.Context):
 
     Attributes
     ----------
-    author: Union[:class:`discord.Member`, :class:`discord.User`,
-    :class:`ProxyBase <discord.ext.reactioncommands.reactionproxy.ProxyBase>`]
+    author: Union[:class:`discord.Member`, :class:`discord.User`, :class:`ProxyBase <discord.ext.reactioncommands.reactionproxy.ProxyBase>`]
 
         .. Warning::
             This is **not the message author**. It is the user who added reactions.
@@ -22,14 +21,17 @@ class ReactionContext(commands.Context):
 
         .. Warning::
             There's no full message from :class:`payload <discord.RawReactionActionEvent>`,
-            so ``ctx.message`` is a :class:`discord.PartialMessage`.
+            so ``ctx.message`` is a :class:`discord.PartialMessage`. This
+            PartialMessage's ``channel`` and ``guild`` attributes might be
+            a :class:`ProxyBase <discord.ext.reactioncommands.reactionproxy.ProxyBase>`
+            and becuase of that ``ctx.channel`` and ``ctx.guild`` might also be.
 
     reaction_command: :class:`bool`
         Whether this ctx was invoked from reactions
     full_emojis: :class:`str`
         String of all the emojis (except prefix and listening_emojis)
         that the user added or removed.
-    listening_emoji: :class:`str`
+    listening_emoji: Optional[:class:`str`]
         The listening emoji that was used with this ctx
     remove_after: list[tuple[:class:`str`, :class:`discord.User`]]
         Tuples of emoji and the user to remove after command invoke.
@@ -67,7 +69,7 @@ class ReactionContext(commands.Context):
     async def fetch(self):
         """Shortcut to :meth:`ctx.message.fetch() <discord.PartialMessage.fetch>`.
 
-        Updates ctx.message with the fetched message and returns it.
+        Updates :attr:`.ReactionContext.message` with the fetched message and returns it.
 
         Raises
         ------
@@ -84,10 +86,19 @@ class ReactionContext(commands.Context):
         self.message = await self.message.fetch()
         return self.message
 
-    def get(self):
-        """Searches :attr:`Bot.cached_messages <discord.ext.commands.Bot.cached_messages>`
+    def get(self, *, reverse=True):
+        """Searches :attr:`.commands.Bot.cached_messages`
         for a message where ``ctx.message.id == message.id``. Returns ``None``
         if the message was not found.
+
+        If found, updates :attr:`.ReactionContext.message` with the message and
+        returns it.
+
+        Parameters
+        ----------
+        reverse: :class:`bool`
+            Whether should search :func:`reversed` ``cached_messages`` (newest
+            messages first). Defaults to ``True``.
 
         Returns
         -------
@@ -96,7 +107,7 @@ class ReactionContext(commands.Context):
         """
         if self.message is None:
             return None
-        m = self.bot._get_message(self.message.id)
+        m = self.bot._get_message(self.message.id, reverse=reverse)
         if m:
             self.message = m
         return m

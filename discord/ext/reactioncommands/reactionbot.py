@@ -9,7 +9,7 @@ from .reactionhelp import ReactionHelp
 from .reactioncontext import ReactionContext
 from .reactioncore import ReactionCommandMixin, ReactionGroupMixin
 from .reactionproxy import (ProxyUser, ProxyMember, ProxyTextChannel,
-                            ProxyDMChannel, ProxyGuild)
+                            ProxyDMChannel, ProxyGuild, ProxyPayload)
 
 __all__ = ('ReactionBot', 'AutoShardedReactionBot', 'ReactionBotMixin')
 
@@ -50,9 +50,25 @@ class ReactionBotMixin(ReactionGroupMixin):
         return ctx
 
     async def on_raw_reaction_add(self, payload):
-        await self.process_reaction_commands(payload)
+        await self.process_raw_reaction_commands(payload)
 
     def _get_message(self, message_id, *, reverse=True):
+        """Searches :attr:`.cached_messages` for a message with id
+        ``message_id``.
+
+        Parameters
+        ----------
+        message_id: :class:`int`
+            id of the message to search for
+        reverse: :class:`bool`
+            Whether it should search reversed (newest first). Default value is
+            ``True``
+
+        Returns
+        -------
+        Optional[:class:`discord.Message`]
+            The message or ``None``
+        """
         messages = self.cached_messages if reverse else reversed(self.cached_messages)
         return discord.utils.get(self.cached_messages, id=message_id) if self._connection._messages else None
 
@@ -87,10 +103,15 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         Reaction mirror to :meth:`~discord.ext.commands.Bot.get_prefix`.
 
+
+        You can try using :meth:`.ProxyPayload.from_reaction_user` to use this
+        with non raw reaction methods or :meth:`~.ProxyPayload.from_message`
+        for a message.
+
         Parameters
         ----------
         payload: :class:`discord.RawReactionActionEvent`
-            payload to start getting context from
+            payload to start getting command emoji from
 
         Returns
         -------
@@ -103,6 +124,10 @@ class ReactionBotMixin(ReactionGroupMixin):
     async def get_listening_emoji(self, payload):
         """Method that gets :attr:`.listening_emoji` that is used for group invoke
         and letting the user know the bot is listening.
+
+        You can try using :meth:`.ProxyPayload.from_reaction_user` to use this
+        with non raw reaction methods or :meth:`~.ProxyPayload.from_message`
+        for a message.
 
         Parameters
         ----------
@@ -127,16 +152,63 @@ class ReactionBotMixin(ReactionGroupMixin):
         ctx: :class:`~.reactioncommands.ReactionContext`
             context to invoke
         """
-        await self.reaction_after_processing(ctx)
+        self.loop.create_task(self.reaction_after_processing(ctx))
+
         try:
             await self.invoke(ctx)
         except Exception as e:
             if self.__debug:
                 print(e)
 
+    async def get_reaction_context(self, reaction, user, *, cls=ReactionContext, check=None, event_type=None):
+        """Creates a context from :class:`~discord.Reaction` and
+        :class:`discord.User`/:class:`discord.Member`.
 
-    async def get_reaction_context(self, payload, *, cls=ReactionContext, check=None):
-        """Creates a :class:`~.reactioncommands.ReactionContext` from payload.
+        Meant to be used with :func:`~discord.on_reaction_add` or
+        :func:`~discord.on_reaction_remove`.
+
+        Reaction mirror to :meth:`~discord.ext.commands.Bot.get_context`.
+
+        Parameters
+        ----------
+        reaction: :class:`discosrd.Reaction`
+            the reaction the user added
+        user: Union[:class:`discord.Member`, :class:`discord.User`]
+            the user who added the reaction
+        cls:
+            The class that will be used for the context.
+        check: Optional[Callable[:class:`discord.RawReactionActionEvent`]]
+            Check that will be passed to :meth:`~discord.ext.commands.Bot.wait_for`.
+            Default check is equivalent to:
+
+            .. code-block:: python
+
+                def check(payload: discord.RawReactionActionEvent):
+                    same_msg = payload.message_id == ctx.message.id
+                    same_user =  payload.user_id == ctx.author.id
+                    return same_msg and same_user
+
+            .. note::
+
+                This still uses raw methods to listen for reactions.
+
+        Returns
+        -------
+        :class:`~.reactioncommands.ReactionContext`
+            The context to invoke.
+        """
+        payload = ProxyPayload.from_reaction_user(reaction, user, event_type=event_type)
+        ctx = cls(self, payload, author=user, message=reaction.message)
+        if user.bot:
+            return ctx
+        return await self._start_ctx_session(ctx, check=check)
+
+    async def get_raw_reaction_context(self, payload, *, cls=ReactionContext, check=None):
+        """Creates a :class:`~.reactioncommands.ReactionContext` from
+        :class:`payload <discord.RawReactionActionEvent>`.
+
+        Meant to be used with :func:`~discord.on_raw_reaction_add` or
+        :func:`~discord.on_raw_reaction_remove`
 
         A lot of weird sh*t happens here. If something is not cached, a proxy
         object where only ``id`` is set is used instead. It may have attributes
@@ -144,7 +216,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         to :class:`discord.PartialMessage`, but subclassed from their originals.
         Not every method will work so good luck :)
 
-        Reaction mirror to :meth:`~discord.ext.commands.Bot.get_context`.
+        Raw Reaction mirror to :meth:`~discord.ext.commands.Bot.get_context`.
 
         Parameters
         ----------
@@ -153,16 +225,21 @@ class ReactionBotMixin(ReactionGroupMixin):
         cls:
             The class that will be used for the context.
         check: Optional[Callable[:class:`discord.RawReactionActionEvent`]]
-            Check that will be passed to ``wait_for``. Default check will
-            return ``True`` for payload where ``payload.message_id == ctx.message.id
-            and payload.user_id == ctx.author.id``.
+            Check that will be passed to :meth:`~discord.ext.commands.Bot.wait_for`.
+            Default check is equivalent to:
+
+            .. code-block:: python
+
+                def check(payload: discord.RawReactionActionEvent):
+                    same_msg = payload.message_id == ctx.message.id
+                    same_user =  payload.user_id == ctx.author.id
+                    return same_msg and same_user
 
         Returns
         -------
         :class:`~.reactioncommands.ReactionContext`
             The context to invoke.
         """
-        command_emoji = await self.get_command_emoji(payload)
 
         author, channel, guild = self._create_proxies(payload)
         message = channel.get_partial_message(payload.message_id)
@@ -174,45 +251,14 @@ class ReactionBotMixin(ReactionGroupMixin):
                 return ctx
         except (NameError, AttributeError):
             pass
+        return await self._start_ctx_session(ctx, check=check)
 
-        maybe_prefix = str(payload.emoji)
-        if ((isinstance(command_emoji, str) and maybe_prefix == command_emoji) or
-                (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
-            ctx.prefix = maybe_prefix
-        else:
-            return ctx
-
-        try:
-            if not await self.reaction_before_processing(ctx):
-                return ctx
-            self.active_ctx_sesssions[ctx.message.id] += 1
-            try:
-                emojis, end_early = await asyncio.wait_for(self._wait_for_emoji_stream(ctx, check=check),
-                                                           timeout=self.listen_total_timeout)
-            except asyncio.TimeoutError:
-                emojis = ''
-                end_early = False
-
-            self.active_ctx_sesssions[ctx.message.id] -= 1
-
-            if not end_early:
-                ctx.remove_after.append((command_emoji, ctx.author))
-            ctx.view = commands.view.StringView(emojis or '')
-            ctx.full_emojis = emojis
-            invoker = ctx.view.get_word()
-            ctx.invoked_with = invoker
-            ctx.command = self.get_reaction_command(invoker)
-        except Exception as e:
-            if self.__debug:
-                print(e)
-        return ctx
-
-    async def process_reaction_commands(self, payload):
+    async def process_raw_reaction_commands(self, payload):
         """Gets context and invokes from a payload. Takes :class:`payload <discord.RawReactionActionEvent>`
         from :func:`~discord.on_raw_reaction_add` or
         :func:`~discord.on_raw_reaction_remove`.
 
-        Reaction mirror to :meth:`~discord.ext.commands.Bot.process_commands`.
+        Raw Reaction mirror to :meth:`~discord.ext.commands.Bot.process_commands`.
 
         .. note::
             If you overwrite :func:`raw_reaction_add <discord.on_raw_reaction_add>`
@@ -224,7 +270,25 @@ class ReactionBotMixin(ReactionGroupMixin):
         payload: :class:`discord.RawReactionActionEvent`
             Payload to get context and invoke from.
         """
-        context = await self.get_reaction_context(payload)
+        context = await self.get_raw_reaction_context(payload)
+        await self.reaction_invoke(context)
+
+    async def process_reaction_commands(self, reaction, user):
+        """Gets context and invokes from a reaction and user. Gets arguments from
+        from :func:`~discord.on_reaction_add` or :func:`~discord.on_reaction_remove`.
+
+        Reaction mirror to :meth:`~discord.ext.commands.Bot.process_commands`.
+
+        Parameters
+        ----------
+        reaction: :class:`discord.Reaction`
+            The reaction the user added
+        user: Union[:class:`discord.Member`, :class:`discord.User`]
+            The user who added the reaction
+        """
+        if user.bot:
+            return
+        context = await self.get_reaction_context(reaction, user)
         await self.reaction_invoke(context)
 
     def _create_proxies(self, payload):
@@ -252,7 +316,68 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         return author, channel, guild
 
+    async def _start_ctx_session(self, ctx, *, check):
+        """Sets attributes of ctx
+
+        Parameters
+        ----------
+        ctx: :class:`~discord.ext.reactioncommands.ReactionContext`
+            the context to fill out
+        check: Callable
+            check to be passed to :meth:`~disocrd.commands.ext.Bot.wait_for`
+
+        Returns
+        -------
+        :class:`~discord.ext.reactioncommands.ReactionContext`
+            returns the ctx that was passed in with more attributes filled out
+        """
+        maybe_prefix = str(ctx.payload.emoji)
+        command_emoji = await self.get_command_emoji(ctx.payload)
+
+        if ((isinstance(command_emoji, str) and maybe_prefix == command_emoji) or
+                (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
+            ctx.prefix = maybe_prefix
+        else:
+            return ctx
+        try:
+            if not await self.reaction_before_processing(ctx):
+                return ctx
+            self.active_ctx_sesssions[ctx.message.id] += 1
+            try:
+                emojis, end_early = await asyncio.wait_for(self._wait_for_emoji_stream(ctx, check=check),
+                                                           timeout=self.listen_total_timeout)
+            except asyncio.TimeoutError:
+                emojis = ''
+                end_early = False
+
+            self.active_ctx_sesssions[ctx.message.id] -= 1
+
+            if not end_early:
+                ctx.remove_after.append((command_emoji, ctx.author))
+            ctx.view = commands.view.StringView(emojis or '')
+            ctx.full_emojis = emojis
+            invoker = ctx.view.get_word()
+            ctx.invoked_with = invoker
+            ctx.command = self.get_reaction_command(invoker)
+        except Exception as e:
+            if self.__debug:
+                print(e)
+        return ctx
+
     async def _wait_for_emoji_stream(self, ctx, *, check=None):
+        """Helper method to listen to reactions added by a user and join them
+        together into a string
+
+        Parameters
+        ----------
+        ctx: :class:`~discord.ext.reactioncommands.ReactionContext`
+            ctx that started this listening
+
+        Returns
+        -------
+        :class:`str`
+            emojis joined together
+        """
         if not check:
             def check(payload):
                 return payload.message_id == ctx.message.id and payload.user_id == ctx.author.id
@@ -353,7 +478,7 @@ class ReactionBotMixin(ReactionGroupMixin):
             try:
                 can_remove = ctx.channel.permissions_for(ctx.me).manage_messages
             except:
-                can_remove = True
+                can_remove = False
             for emoji, user in ctx.remove_after:
                 if user == self.user:
                     if not (emoji == ctx.listening_emoji and self.active_ctx_sesssions[ctx.message.id]):

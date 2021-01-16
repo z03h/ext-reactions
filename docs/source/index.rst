@@ -9,13 +9,13 @@ ext-reactions Docs
 Extension for discord.py that adds reaction commands.
 
 Extremely `pepega <https://www.streamscheme.com/wp-content/uploads/2020/04/pepega.png>`_, but it works.
+I think...
 
 Should be 100% compatible with normal discord.py commands. Tried to make reaction
 commands as similar as I could to base commands in discord.py.
 
 Only stuff that's been modified is here, everything else is the same and you should
-use :doc:`Discord.py Docs <dpy:index>`
-for anything that's not found here.
+use :doc:`Discord.py Docs <dpy:index>` for anything that's not found here.
 
 Install with pip:
 

@@ -1,5 +1,6 @@
 import discord
 
+__all__ = ('ProxyMessage', 'ProxyPayload')
 
 class ProxyBase:
     """Base class for Proxy objects
@@ -31,7 +32,7 @@ class ProxyMember(ProxyBase, discord.Member):
 
     Attributes
     ----------
-    guild: Union[:class:`discord.Guild`, :class:`.ProxyGuild`]
+    guild: Union[:class:`discord.Guild`, :class:`~discord.ext.reactioncommands.reactionproxy.ProxyGuild`]
         Guild this proxy member belongs to
     """
 
@@ -45,7 +46,7 @@ class ProxyTextChannel(ProxyBase, discord.TextChannel):
 
     Attributes
     ----------
-    guild: Union[:class:`discord.Guild`, :class:`.ProxyGuild`]
+    guild: Union[:class:`discord.Guild`, :class:`~discord.ext.reactioncommands.reactionproxy.ProxyGuild`]
         Guild this proxy channel belongs to
     """
     def __init__(self, bot, id, guild):
@@ -57,7 +58,7 @@ class ProxyDMChannel(ProxyBase, discord.DMChannel):
 
     Attributes
     ----------
-    recepient: Union[:class:`discord.User`, :class:`..ProxyUser`]
+    recepient: Union[:class:`discord.User`, :class:`~discord.ext.reactioncommands.reactionproxy.ProxyUser`]
         User this is a DM with
     """
 
@@ -71,7 +72,33 @@ class ProxyGuild(ProxyBase, discord.Guild):
     pass
 
 
-class MessagePayload:
+class ProxyPayload:
+    """Class to mimic :class:`discord.RawReactionActionEvent`. Should have all the
+    same attributes. Useful for :meth:`.ReactionBot.get_command_emoji` from a
+    message.
+
+    Use :meth:`~.ProxyPayload.from_message` to create an instance of this class.
+
+    Attributes other than what is listed should be ``None`` since
+    :class:`discord.Message` doesn't have those attributes. You can pass them
+    yourself as ``kwargs`` if you use :meth:`~.ProxyPayload.from_message`.
+
+    Attributes
+    ----------
+    user_id: :class:`int`
+        user id to represent who this payload comes from
+    channel_id: :class:`int`
+        channel id to represent where this payload comes from
+    guild_id: Optional[:class:`int`]
+        guild id to represent where this payload comes from
+        or ``None`` for dms
+    member: Union[:class:`discord.Member`, :class:`discord.User`]
+        From :attr:`discord.Message.author`
+    emoji: Any
+        ``None`` unless manually passed in
+    event_type: Any
+        ``None`` unless manually passed in
+    """
 
     def __init__(self, **kwargs):
         self.channel_id = kwargs.get('channel_id')
@@ -83,18 +110,74 @@ class MessagePayload:
         self.event_type = kwargs.get('event_type')
 
     @classmethod
-    def from_message(cls, message):
-        author = message.author
+    def from_message(cls, message, *, author=None, emoji=None, event_type=None):
+        """Classmethod to create a :class:`.ProxyPayload` from a message.
+
+        Parameters
+        ----------
+        message: :class:`discord.Message`
+            Message to get "payload" from
+        author: Union[:class:`discord.User`, :class:`discord.Member`]
+            If you want to overwrite ``message.author`` with a different user.
+        emoji: Any
+            Defaults to ``None``
+        event_type: Any
+            Defaults to ``None``
+        """
         return cls(channel_id=message.channel.id,
                    message_id=message.id,
                    guild_id=getattr(message.guild, 'id', None),
-                   member=author,
-                   user_id=author.id
+                   member=author or message.author,
+                   user_id=author.id,
+                   emoji=emoji,
+                   event_type=event_type
                    )
 
+    @classmethod
+    def from_reaction_user(cls, reaction, user, *, event_type=None):
+        """Classmethod to create a :class:`.ProxyPayload` from a reaction and user.
 
-class PayloadMessage:
+        For use with :func:`~discord.on_reacton_add` and
+        :func:`~discord.on_reaction_remove`.
 
+        Parameters
+        ----------
+        reaction: :class:`discord.Reaction`
+            Reaction from event
+        user: Union[:class:`discord.User`, :class:`discord.Member`]
+            The user or member from event
+        event_type: Any
+            Defaults to ``None``
+        """
+        return cls.from_message(reaction.message,
+                                author=user,
+                                emoji=reaction.emoji,
+                                event_type=event_type
+                                )
+
+
+class ProxyMessage:
+    """Class to mimic :class:`discord.Message`. Not usable like
+    :class:`discord.PartialMessage` and only has attributes set.
+
+    .. note::
+        Any of these attributes could be a
+        :class:`~discord.ext.reactioncommands.reactionproxy.ProxyBase` if they
+        cannot be resolved to an object.
+
+    Attributes
+    ----------
+    id: :class:`int`
+        :attr:`discord.RawReactionActionEvent.message_id`
+    author: Union[:class:`discord.User`, :class:`discord.Member`]
+        :attr:`discord.RawReactionActionEvent.member` or
+        ``guild.get_member``/``bot.get_user`` on
+        :attr:`discord.RawReactionActionEvent.user_id`.
+    channel: Union[:class:`discord.TextChannel`, :class:`discord.DMChannel`]
+        ``bot.get_channel`` on :attr:`discord.RawReactionActionEvent.channel_id`.
+    guild: Optional[:class:`discord.Guild`]
+        ``bot.get_guild`` on :attr:`discord.RawReactionActionEvent.guild_id`
+    """
     def __init__(self, id, author, channel, guild):
         self.id = id
         self.author = author
@@ -103,5 +186,14 @@ class PayloadMessage:
 
     @classmethod
     def from_payload(cls, bot, payload):
+        """Classmethod to create a :class:`.ProyMessage` from a payload.
+
+        Parameters
+        ----------
+        bot: :class:`~discord.ext.commands.Bot`
+            requires your bot instance for various ``get_x`` methods.
+        payload: :class:`discord.RawReactionActionEvent`
+            payload from a raw reaction event
+        """
         author, channel, guild = bot._create_proxies(payload)
         return cls(payload.message_id, author, channel, guild)

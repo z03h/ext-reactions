@@ -1,4 +1,4 @@
-.. currentmodule:: discord.ext
+.. currentmodule:: discord
 
 API Reference
 =============
@@ -12,9 +12,9 @@ The default order in which everything is called and what methods call what:
 
 - :func:`on_raw_reaction_add(payload) <discord.on_raw_reaction_add>`
 
-  - :meth:`process_reaction_commands(payload) <.ReactionBot.process_reaction_commands>`
+  - :meth:`process_raw_reaction_commands(payload) <.ReactionBot.process_raw_reaction_commands>`
 
-    - :meth:`get_reaction_context(payload) <.ReactionBot.get_reaction_context>`
+    - :meth:`get_raw_reaction_context(payload) <.ReactionBot.get_raw_reaction_context>`
 
       - :meth:`reaction_before_processing(ctx) <.ReactionBot.reaction_before_processing>`
 
@@ -24,6 +24,11 @@ The default order in which everything is called and what methods call what:
 
       - :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>` which runs checks,
         before invokes, arg conversion, and all that stuff.
+
+.. seealso::
+    :meth:`~.ReactionBot.process_reaction_commands` and
+    :meth:`~.ReactionBot.get_reaction_context` for invoking from
+    :func:`~discord.on_reaction_add` instead of raw methods.
 
 ReactionBotMixin
 ~~~~~~~~~~~~~~~~
@@ -94,17 +99,28 @@ ReactionGroup
 ReactionContext
 ^^^^^^^^^^^^^^^
 
-There's a lot of weird crap that goes on here. A
-:class:`ProxyBase <discord.ext.reactioncommands.reactionproxy>` is used if
-anything from  :class:`payload <discord.RawReactionActionEvent>`
-cannot be resolved to a matching object.
+There's a lot of weird crap that goes on here is using raw methods. A
+:class:`.ProxyBase` is used if anything from
+:class:`payload <discord.RawReactionActionEvent>` cannot be
+resolved to a matching object.
 
-Ex: A :class:`ProxyMember <discord.ext.reactioncommands.reactionproxy.ProxyMember>`
-or :class:`ProxyUser <discord.ext.reactioncommands.reactionproxy.ProxyUser>`
-may be used instead of :class:`discord.Member` or :class:`discord.User` if
-:meth:`~discord.Guild.get_member` or :meth:`~discord.ext.commands.Bot.get_user`
-return ``None`` and :attr:`payload.member <discord.RawReactionActionEvent.member>`
-is ``None``.
+Ex: A :class:`.ProxyMember` or :class:`.ProxyUser` may be used instead of
+:class:`discord.Member` or :class:`discord.User` if :meth:`~discord.Guild.get_member`
+or :meth:`~discord.ext.commands.Bot.get_user` return ``None`` and
+:attr:`payload.member <discord.RawReactionActionEvent.member>` is ``None``.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionContext
+    :members:
+
+Util functions
+^^^^^^^^^^^^^^
+
+.. autofunction:: discord.ext.reactioncommands.utils.scrub_emoji
+
+Error
+^^^^^
+
+Just one for now
+
+.. autoexception:: discord.ext.reactioncommands.ReactionOnlyCommand
     :members:

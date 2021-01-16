@@ -226,6 +226,24 @@ class ReactionGroupMixin:
                 self.all_commands[alias] = cmd
         return command
 
+    def remove_reaction_command(self, emoji):
+        """Attempts to remove a reaction command by emoji
+
+        Parameters
+        ----------
+        emoji: :class:`str`
+            emoji of the reaction command to remove
+
+        Returns
+        -------
+        Optional[:class:`.ReactionCommand`]
+            The command that was removed or ``None``
+        """
+        command = self.get_reaction_command(emoji)
+        if command:
+            return self.remove_command(command.name)
+        return None
+
     def get_reaction_command(self, name):
         """Gets a command by emoji.
 

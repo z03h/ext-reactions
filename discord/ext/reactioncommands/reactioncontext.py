@@ -15,16 +15,20 @@ class ReactionContext(commands.Context):
         .. Warning::
             This is **not the message author**. It is the user who added reactions.
 
-    payload: :class:`discord.RawReactionActionEvent`
-        The payload this context came from
-    message: :class:`discord.PartialMessage`
+    payload: Union[:class:`.ProxyPayload`, :class:`discord.RawReactionActionEvent`]
+        The payload this context came from, type depends on if this context
+        came from raw method or not.
+    message: Union[:class:`discord.Message`, :class:`discord.PartialMessage`]
+        Will be a full :class:`discord.Message` if not from a raw event.
 
         .. Warning::
             There's no full message from :class:`payload <discord.RawReactionActionEvent>`,
             so ``ctx.message`` is a :class:`discord.PartialMessage`. This
             PartialMessage's ``channel`` and ``guild`` attributes might be
-            a :class:`.ProxyBase`
-            and becuase of that ``ctx.channel`` and ``ctx.guild`` might also be.
+            a :class:`.ProxyBase` and becuase of that ``ctx.channel``
+            and ``ctx.guild`` might also be.
+
+            Use :meth:`.get` or :meth:`.fetch` to get the full message.
 
     reaction_command: :class:`bool`
         Whether this ctx was invoked from reactions
@@ -81,8 +85,8 @@ class ReactionContext(commands.Context):
         :class:`discord.Message`
             The message the PartialMessage was representing.
         """
-        if self.message is None:
-            return None
+        if self.message is None or isinstance(self.message, discord.Message):
+            return self.message
         self.message = await self.message.fetch()
         return self.message
 
@@ -105,8 +109,8 @@ class ReactionContext(commands.Context):
         Optional[:class:`discord.Message`]
             The message or ``None``
         """
-        if self.message is None:
-            return None
+        if self.message is None or isinstance(self.message, discord.Message):
+            return self.message
         m = self.bot._get_message(self.message.id, reverse=reverse)
         if m:
             self.message = m

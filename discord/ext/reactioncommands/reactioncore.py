@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from .utils import scrub_emoji
+from .utils import scrub_emojis
 from .reactionerrors import ReactionOnlyCommand
 
 __all__ = ('ReactionCommand',
@@ -18,7 +18,7 @@ class _EmojiInsensitiveDict(dict):
         super().__init__(*args, **kwargs)
 
     def _clean(self, k):
-        return scrub_emoji(k)
+        return scrub_emojis(k)
 
     def __contains__(self, k):
         return super().__contains__(self._clean(k))

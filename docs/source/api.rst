@@ -130,7 +130,7 @@ Things that were small enough and didn't require a new page
 Util functions
 ~~~~~~~~~~~~~~
 
-.. autofunction:: discord.ext.reactioncommands.utils.scrub_emoji
+.. autofunction:: discord.ext.reactioncommands.utils.scrub_emojis
 
 Error
 ~~~~~

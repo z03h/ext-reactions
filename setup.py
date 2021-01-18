@@ -27,10 +27,15 @@ if version.endswith(('a', 'b', 'rc')):
     except Exception:
         pass
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(name='ext-reactions',
       author='z03h',
       url='https://github.com/z03h/ReactionCommandBot',
       version=version,
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       packages=['discord.ext.reactioncommands'],
       license='MIT',
       description='discord.py extension that adds reaction commands',

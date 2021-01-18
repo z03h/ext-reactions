@@ -146,13 +146,8 @@ class ReactionGroupMixin:
         super().__init__(*args, **kwargs)
 
     @property
-    def emoji_commands(self):
-        """Unique set of :class:`.ReactionCommand`\ s registered
-
-        Returns
-        -------
-        set[:class:`.ReactionCommand`]
-            Registered :class:`.ReactionCommand`\ s
+    def reaction_commands(self):
+        """set[:class:`.ReactionCommand`]: Unique registered reaction commands.
         """
         return set(self.emoji_mapping.values())
 
@@ -288,7 +283,8 @@ class ReactionGroupMixin:
         Returns
         -------
         :class:`Callable`
-            A decorator that converts the provided method into a Command, adds it to the bot, then returns it.
+            A decorator that converts the provided method into a Command, adds it to the
+            internal lsit of commands, then returns it.
         """
         def decorator(func):
             kwargs.setdefault('parent', self)
@@ -313,7 +309,8 @@ class ReactionGroupMixin:
         Returns
         -------
         :class:`Callable`
-            A decorator that converts the provided method into a Group, adds it to the bot, then returns it.
+            A decorator that converts the provided method into a Group, adds it to the
+            list of commands, then returns it.
         """
         def decorator(func):
             kwargs.setdefault('parent', self)

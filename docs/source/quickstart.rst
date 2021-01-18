@@ -29,7 +29,7 @@ Create a :class:`~.ReactionBot`
 
 - :attr:`~.ReactionBot.command_emoji`: Similar to ``command_prefix`` but for
   reaction commands. Will start a "listening session" where the bot listens for
-  reaction add/remove with :meth:`~discord.ext.commands.Bot.wait_for` and finds
+  raw reaction add/remove with :meth:`~discord.ext.commands.Bot.wait_for` and finds
   the matching command from the emojis added/removed.
 
 - :attr:`~.ReactionBot.listening_emoji` If set, this emoji will be added after

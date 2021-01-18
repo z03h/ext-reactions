@@ -112,13 +112,28 @@ or :meth:`~discord.ext.commands.Bot.get_user` return ``None`` and
 .. autoclass:: discord.ext.reactioncommands.ReactionContext
     :members:
 
+Reaction HelpCommand
+^^^^^^^^^^^^^^^^^^^^
+
+Even comes with it's own default help command. If you want to customize it there's
+not really any simple way so you're basically rewriting all of the help command.
+
+.. autoclass:: discord.ext.reactioncommands.ReactionHelp
+  :members:
+
+
+Misc things
+^^^^^^^^^^^
+
+Things that were small enough and didn't require a new page
+
 Util functions
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 .. autofunction:: discord.ext.reactioncommands.utils.scrub_emoji
 
 Error
-^^^^^
+~~~~~
 
 Just one for now
 

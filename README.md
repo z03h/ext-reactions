@@ -7,6 +7,7 @@ I'll finish this eventually and ~~document it somewhere maybe~~.
 
 [![Documentation Status](https://readthedocs.org/projects/extreactions/badge/?version=latest)](https://extreactions.readthedocs.io/en/latest/?badge=latest)
 
+[PYPI](https://pypi.org/project/ext-reactions/) 😄
 ___
 Example code
 

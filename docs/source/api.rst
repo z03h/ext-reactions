@@ -20,11 +20,11 @@ The default order in which everything is called and what methods call what:
 
     - :meth:`reaction_invoke(ctx) <.ReactionBot.reaction_invoke>`
 
-      - :meth:`reaction_after_processing(ctx) <.ReactionBot.reaction_after_processing>`
-        starts as a taskso won't necessarily be before or after invoke
+      - | :meth:`reaction_after_processing(ctx) <.ReactionBot.reaction_after_processing>`
+        | starts as a task, not guaranteed to run before or after :meth:`invoke <discord.ext.commands.Bot.invoke>`
 
-      - :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>` which runs checks,
-        before invokes, arg conversion, and all that stuff.
+      - | :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>`
+        | runs checks, before invokes, arg conversion, and all the normal stuff.
 
 .. seealso::
     :meth:`~.ReactionBot.process_reaction_commands` and
@@ -36,11 +36,12 @@ ReactionBotMixin
 
 Can use this to add reaction commands for your own bot subclass.
 
-.. autoclass:: discord.ext.reactioncommands.ReactionBotMixin
-
 .. note::
+
     Probably subclass :class:`.ReactionBot` or :class:`.AutoShardedReactionBot`
-    instead.
+    instead of using this.
+
+.. autoclass:: discord.ext.reactioncommands.ReactionBotMixin
 
 ReactionBot
 ~~~~~~~~~~~

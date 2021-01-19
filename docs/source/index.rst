@@ -6,23 +6,18 @@
 ext-reactions Docs
 =============================================
 
-Extension for discord.py that adds reaction commands.
+| Extension for discord.py that adds reaction commands.
+| Extremely `pepega <https://www.streamscheme.com/wp-content/uploads/2020/04/pepega.png>`_, but it works. I think...
 
-Extremely `pepega <https://www.streamscheme.com/wp-content/uploads/2020/04/pepega.png>`_, but it works.
-I think...
-
-Should be 100% compatible with normal discord.py commands. Tried to make reaction
-commands as similar as I could to base commands in discord.py.
-
-Only stuff that's been modified is here, everything should be the same.
+Should be 100% compatible with discord.py commands. Tried to make reaction
+commands as similar as possible.
 
 You should use :doc:`Discord.py Docs <dpy:index>` for anything that's not found here.
-
-Install
+Only things that have been modified are here, everything else should be the same.
 
 .. code-block:: sh
 
-    # through pip
+    # install through pip
     python3 -m pip install ext-reactions
     # or windows
     py -3 -m pip install ext-reactions
@@ -32,9 +27,9 @@ Install
     # or windows
     py -3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
 
-`Github Source <https://github.com/z03h/ext-reactions>`_
+- `Github Source <https://github.com/z03h/ext-reactions>`_
 
-`PYPI Link <https://pypi.org/project/ext-reactions/>`_
+- `PYPI Link <https://pypi.org/project/ext-reactions/>`_
 
 General Stuff
 ^^^^^^^^^^^^^

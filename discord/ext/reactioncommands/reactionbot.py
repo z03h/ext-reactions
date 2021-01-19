@@ -69,7 +69,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         Optional[:class:`discord.Message`]
             The message or ``None``
         """
-        messages = self.cached_messages if reverse else reversed(self.cached_messages)
+        messages = self.cached_messages if not reverse else reversed(self.cached_messages)
         return discord.utils.get(self.cached_messages, id=message_id) if self._connection._messages else None
 
     async def _get_x_emoji(self, payload, *, attr, str_only=False):
@@ -210,8 +210,9 @@ class ReactionBotMixin(ReactionGroupMixin):
         Meant to be used with :func:`~discord.on_raw_reaction_add` or
         :func:`~discord.on_raw_reaction_remove`
 
-        A lot of weird sh*t happens here. If something is not cached, a proxy
-        object where only ``id`` is set is used instead. It may have attributes
+        A lot of weird sh*t happens here. If something is not cached or provided,
+        a :class:`~discord.ext.reactioncommands.reactionproxy.ProxyBase`
+        where only ``id`` is set is used instead. It may have attributes
         set to other proxy objects. These proxy objects `should` behave similar
         to :class:`discord.PartialMessage`, but subclassed from their originals.
         Not every method will work so good luck :)
@@ -270,6 +271,9 @@ class ReactionBotMixin(ReactionGroupMixin):
         payload: :class:`discord.RawReactionActionEvent`
             Payload to get context and invoke from.
         """
+        author = payload.member or self.get_user(payload.user_id)
+        if author and author.bot:
+            return
         context = await self.get_raw_reaction_context(payload)
         await self.reaction_invoke(context)
 
@@ -334,8 +338,8 @@ class ReactionBotMixin(ReactionGroupMixin):
         maybe_prefix = str(ctx.payload.emoji)
         command_emoji = await self.get_command_emoji(ctx.payload)
 
-        if ((isinstance(command_emoji, str) and maybe_prefix == command_emoji) or
-                (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
+        if (maybe_prefix == command_emoji) or
+                (isinstance(command_emoji, list) and maybe_prefix in command_emoji):
             ctx.prefix = maybe_prefix
         else:
             return ctx

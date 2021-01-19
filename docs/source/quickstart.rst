@@ -50,7 +50,7 @@ Use decorators to add commands
 
 If you're in a cog
 
-- :func:`@reactioncommands.reaction_command(emoji) <discord.ext.reactioncommands.reaction_command>` or
+- :func:`@reactioncommands.reaction_command(emoji) <discord.ext.reactioncommands.reaction_command>`
 - :func:`@reactioncommands.reaction_group(emoji) <discord.ext.reactioncommands.reaction_group>`.
 
 .. code-block:: python
@@ -112,9 +112,9 @@ Multiple emojis in the name or emoji aliases
 
     @bot.reaction_command(["👋👋", "👋👋👋"])
     async def hi(ctx):
-        # ctx.prefix will be which emoji(s) the user
+        # ctx.invoked_with will be which emoji(s) the user
         # invoked the command with, so "👋👋" or "👋👋👋".
-        await ctx.send(f"{ctx.prefix} {ctx.author}")
+        await ctx.send(f"{ctx.invoked_with} {ctx.author}")
 
 Groups
 ~~~~~~
@@ -165,7 +165,7 @@ Case insensitive
     # can be invoked with any of 👍,👍🏻,👍🏼,👍🏽,👍🏾,👍🏿
     @bot.reaction_command("👍")
     async def hi(ctx):
-        await ctx.send(f"Send that {ctx.prefix} {ctx.author} 👍👍👍")
+        await ctx.send(f"Send that {ctx.invoked_with} {ctx.author} 👍👍👍")
 
 Anyways, here's a huge wall of example code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,20 +243,20 @@ Code with comments that explain what some stuff does.
     @commands.guild_only()
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.max_concurrency(1)
-    # You can pass a list/tuple of strings to function as aliases.
+    # You can pass a list/tuple of strings to, similar to aliases.
     # This command can be invoked with:
     # +🤔(prefix) > +🥺
     # or
     # +🤔(prefix) > +🥺 > -🥺
     @bot.reaction_command(['🥺', '🥺🥺'])
     async def please(ctx):
-        text = 'ctx.message will be a PartialMessage\n' \
+        text = 'ctx.message will be a PartialMessageif invoked from reactions\n' \
                'To get a full message, you can use ctx.get() which searches message cache' \
                'or ctx.fetch() which is a shortcut to PartialMessage.fetch()\n'
-               f'{ctx.author=} is **NOT** the same as ctx.message.author for reaction commands\n' \
+               'ctx.author is NOT the same as ctx.message.author for reaction commands\n' \
                'ctx.message is the message reactions were added to\n' \
-               'ctx.author is the user who added reactions, not the author of the message\n' \
-               'Lots of things broken, ex: args will only be default value or None, lmao'
+               'ctx.author is the user who added reactions, not message.author\n' \
+               'Lots of things broken, ex: args will only be default value or None'
         await ctx.trigger_typing()
         await asyncio.sleep(9)
         await ctx.message.reply(text)

@@ -40,6 +40,18 @@ class _EmojiInsensitiveDict(dict):
 
 
 class ReactionCommandMixin:
+    """Mixin for ReactinCommands
+
+    Implements ReactionCommand functionality for :class:`ReactionCommand`
+    and :class:`ReactionGroup`.
+
+    Parameters
+    ----------
+    emojis: Union[:class:`str`, list]
+        emoji or list of emojis that the command cane be invoked with
+    invoke_with_message: :class:`bool`
+        Whether the command can be invoked from a message. Defaults to ``True``.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -126,7 +138,7 @@ class ReactionCommandMixin:
 
 
 class ReactionGroupMixin:
-    """Mixin to for ReactionGroups.
+    """Mixin for ReactionGroups.
 
     Implements reaction group functionality for :class:`.ReactionBot` and
     :class:`.ReactionGroup`.

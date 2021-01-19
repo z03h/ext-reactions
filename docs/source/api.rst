@@ -21,6 +21,7 @@ The default order in which everything is called and what methods call what:
     - :meth:`reaction_invoke(ctx) <.ReactionBot.reaction_invoke>`
 
       - :meth:`reaction_after_processing(ctx) <.ReactionBot.reaction_after_processing>`
+        starts as a taskso won't necessarily be before or after invoke
 
       - :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>` which runs checks,
         before invokes, arg conversion, and all that stuff.
@@ -78,6 +79,8 @@ Decorators for adding commands in cogs.
 Command Classes
 ~~~~~~~~~~~~~~~
 
+.. autoclass:: discord.ext.reactioncommands.ReactionCommandMixin
+
 .. autoclass:: discord.ext.reactioncommands.ReactionGroupMixin
 
 ReactionCommand
@@ -112,11 +115,11 @@ or :meth:`~discord.ext.commands.Bot.get_user` return ``None`` and
 .. autoclass:: discord.ext.reactioncommands.ReactionContext
     :members:
 
-Reaction HelpCommand
+ReactionHelp
 ^^^^^^^^^^^^^^^^^^^^
 
 Even comes with it's own default help command. If you want to customize it there's
-not really any simple way so you're basically rewriting all of the help command.
+not really a simple way so you're basically subclassing help.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionHelp
   :members:

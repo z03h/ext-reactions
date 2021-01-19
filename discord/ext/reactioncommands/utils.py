@@ -15,7 +15,7 @@ def scrub_emojis(emoji):
     Parameters
     ----------
     emoji: :class:`str`
-        the emoji to remove modifiers from
+        text/emojis to remove modifiers from
 
     Returns
     --------

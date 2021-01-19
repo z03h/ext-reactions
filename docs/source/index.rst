@@ -14,19 +14,27 @@ I think...
 Should be 100% compatible with normal discord.py commands. Tried to make reaction
 commands as similar as I could to base commands in discord.py.
 
-Only stuff that's been modified is here, everything else is the same and you should
-use :doc:`Discord.py Docs <dpy:index>` for anything that's not found here.
+Only stuff that's been modified is here, everything should be the same.
 
-Install with pip:
+You should use :doc:`Discord.py Docs <dpy:index>` for anything that's not found here.
+
+Install
 
 .. code-block:: sh
 
-    python3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
+    # through pip
+    python3 -m pip install ext-reactions
+    # or windows
+    py -3 -m pip install ext-reactions
 
+    # developement install
+    python3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
     # or windows
     py -3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
 
 `Github Source <https://github.com/z03h/ext-reactions>`_
+
+`PYPI Link <https://pypi.org/project/ext-reactions/>`_
 
 General Stuff
 ^^^^^^^^^^^^^

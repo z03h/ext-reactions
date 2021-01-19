@@ -79,9 +79,9 @@ class ProxyPayload:
 
     Use :meth:`~.ProxyPayload.from_message` to create an instance of this class.
 
-    Attributes other than what is listed should be ``None`` since
-    :class:`discord.Message` doesn't have those attributes. You can pass them
-    yourself as ``kwargs`` if you use :meth:`~.ProxyPayload.from_message`.
+    Some attributes will be  ``None`` since :class:`discord.Message` doesn't
+    have those attributes. You can pass them yourself as ``kwargs`` if you use
+    :meth:`~.ProxyPayload.from_message`.
 
     Attributes
     ----------
@@ -168,15 +168,15 @@ class ProxyMessage:
     Attributes
     ----------
     id: :class:`int`
-        :attr:`discord.RawReactionActionEvent.message_id`
+        :attr:`payload.message_id <discord.RawReactionActionEvent.message_id>`
     author: Union[:class:`discord.User`, :class:`discord.Member`]
-        :attr:`discord.RawReactionActionEvent.member` or
+        :attr:`payload.member <discord.RawReactionActionEvent.member>` or
         ``guild.get_member``/``bot.get_user`` on
-        :attr:`discord.RawReactionActionEvent.user_id`.
+        :attr:`payload.user_id <discord.RawReactionActionEvent.user_id>`.
     channel: Union[:class:`discord.TextChannel`, :class:`discord.DMChannel`]
-        ``bot.get_channel`` on :attr:`discord.RawReactionActionEvent.channel_id`.
+        ``bot.get_channel`` on :attr:`payload.channel_id <discord.RawReactionActionEvent.channel_id>`.
     guild: Optional[:class:`discord.Guild`]
-        ``bot.get_guild`` on :attr:`discord.RawReactionActionEvent.guild_id`
+        ``bot.get_guild`` on :attr:`payload.guild_id <discord.RawReactionActionEvent.guild_id>`
     """
     def __init__(self, id, author, channel, guild):
         self.id = id

@@ -17,7 +17,7 @@ Only things that have been modified are here, everything else should be the same
 
 .. code-block:: sh
 
-    # install through pip
+    # install with pip
     python3 -m pip install ext-reactions
     # or windows
     py -3 -m pip install ext-reactions

@@ -39,8 +39,8 @@ Create a :class:`~.ReactionBot`
 Use decorators to add commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :meth:`@ReactionBot.reaction_command(emoji) <discord.ext.reactioncommands.ReactionBot.reaction_command>`
-- :meth:`@ReactionBot.reaction_group(emoji) <discord.ext.reactioncommands.ReactionBot.reaction_group>`
+- :meth:`~discord.ext.reactioncommands.ReactionBot.reaction_command>`
+- :meth:`~discord.ext.reactioncommands.ReactionBot.reaction_group`
 
 .. code-block:: python
 
@@ -50,8 +50,8 @@ Use decorators to add commands
 
 If you're in a cog
 
-- :func:`@reactioncommands.reaction_command(emoji) <discord.ext.reactioncommands.reaction_command>`
-- :func:`@reactioncommands.reaction_group(emoji) <discord.ext.reactioncommands.reaction_group>`.
+- :func:`~discord.ext.reactioncommands.reaction_command`
+- :func:`~discord.ext.reactioncommands.reaction_group`
 
 .. code-block:: python
 
@@ -79,8 +79,6 @@ Simple command
     async def hi(ctx):
         await ctx.send(f"Hi {ctx.author}")
 
-    # Don't forget bot.run(TOKEN)
-
 Cogs
 ~~~~
 
@@ -103,12 +101,14 @@ Cogs
 
             await ctx.send(f"🎉🎉 {member.id} 🎉🎉")
 
-    # Don't forget to add setup(bot)
-
-Multiple emojis in the name or emoji aliases
+Multiple emojis or aliases
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
+
+    @bot.reaction_command("👋👋👋👋👋"])
+    async def bye(ctx):
+        await ctx.send("👋*5")
 
     @bot.reaction_command(["👋👋", "👋👋👋"])
     async def hi(ctx):
@@ -134,7 +134,7 @@ Mixing :class:`ReactionGroups <.ReactionGroup>` with :class:`Commands <discord.e
 
 .. code-block:: python
 
-    # can be invoked with messagese or reactions
+    # can be invoked with messages or reactions
     @bot.reaction_group("👋", invoke_without_command=True)
     async def hi(ctx):
         await ctx.send(f"Hi {ctx.author}")

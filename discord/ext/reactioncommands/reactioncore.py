@@ -40,7 +40,7 @@ class _EmojiInsensitiveDict(dict):
 
 
 class ReactionCommandMixin:
-    """Mixin for ReactinCommands
+    """Mixin for ReactionCommands
 
     Implements ReactionCommand functionality for :class:`ReactionCommand`
     and :class:`ReactionGroup`.
@@ -51,6 +51,13 @@ class ReactionCommandMixin:
         emoji or list of emojis that the command cane be invoked with
     invoke_with_message: :class:`bool`
         Whether the command can be invoked from a message. Defaults to ``True``.
+    invoke_without_prefix: :class:`bool`
+        Whether the command can be invoked without :attr:`ReactionBot.command_emoji`.
+        Defaults to ``False``.
+
+        .. warning::
+            Can get a lot of unwanted commands with this set to ``True``.
+            Be careful.
     """
 
     def __init__(self, *args, **kwargs):
@@ -59,6 +66,7 @@ class ReactionCommandMixin:
         if not emojis:
             raise ValueError(f'emojis cannot be empty for command {self.name}')
         self.invoke_with_message = kwargs.get('invoke_with_message', True)
+        self.invoke_without_prefix = kwargs.get('invoke_without_prefix', False)
         self.emojis = [emojis] if isinstance(emojis, str) else list(emojis)
 
     async def can_run(self, ctx):
@@ -348,6 +356,13 @@ class ReactionCommand(ReactionCommandMixin, commands.Command):
     invoke_with_message: Optional[:class:`bool`]
         Whether the command can be invoked with messages or not. Pass ``False``
         to only allow reaction invoke. Default value is ``True``.
+    invoke_without_prefix: :class:`bool`
+        Whether the command can be invoked without :attr:`ReactionBot.command_emoji`.
+        Defaults to ``False``.
+
+        .. warning::
+            Can get a lot of unwanted command invokes with this set to ``True``.
+            Be careful.
     """
     pass
 

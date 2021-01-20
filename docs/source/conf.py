@@ -24,9 +24,6 @@ project = 'ext-reactions'
 copyright = '2021, z03h'
 author = 'z03h'
 
-# The full version, including alpha/beta/rc tags
-release = '0.1.0a'
-
 # -- General configuration ---------------------------------------------------
 needs_sphinx = '3.4.3'
 

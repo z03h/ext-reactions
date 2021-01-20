@@ -8,6 +8,18 @@ I'll finish this eventually and ~~document it somewhere maybe~~.
 [Nice, docs are here](https://extreactions.readthedocs.io/en/latest/) 😄
 
 [![PYPI](https://img.shields.io/pypi/v/ext-reactions.svg)](https://pypi.org/project/ext-reactions/) 😄
+
+```python
+# install with pip
+python3 -m pip install ext-reactions
+# or windows
+py -3 -m pip install ext-reactions
+
+# developement install
+python3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
+# or windows
+py -3 -m pip install -U git+https://github.com/z03h/ext-reactions@master
+```
 ___
 Example code
 

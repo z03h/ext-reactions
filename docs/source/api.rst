@@ -6,8 +6,6 @@ API Reference
 Bot
 ^^^
 
-Bot classes that you can use to add reaction commands.
-
 The default order in which everything is called and what methods call what:
 
 - :func:`on_raw_reaction_add(payload) <discord.on_raw_reaction_add>`
@@ -18,13 +16,18 @@ The default order in which everything is called and what methods call what:
 
       - :meth:`reaction_before_processing(ctx) <.ReactionBot.reaction_before_processing>`
 
-    - :meth:`reaction_invoke(ctx) <.ReactionBot.reaction_invoke>`
+      - | ``_early_invoke``
+        | checks if reaction is a command that can be invoked without prefix. If
+        | :attr:`~.ReactionCommand.invoke_without_prefix` is ``True``, skips ``_wait_for_emoji_stream``.
+
+      - | ``_wait_for_emoji_stream``
+        | uses ``wait_for`` for reactions and tries to find a command from them.
 
       - | :meth:`reaction_after_processing(ctx) <.ReactionBot.reaction_after_processing>`
-        | starts as a task, not guaranteed to run before or after :meth:`invoke <discord.ext.commands.Bot.invoke>`
+        | starts as a task
 
-      - | :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>`
-        | runs checks, before invokes, arg conversion, and all the normal stuff.
+    - | :meth:`invoke(ctx) <discord.ext.commands.Bot.invoke>`
+      | runs checks, before invokes, arg conversion, and all the normal stuff.
 
 .. seealso::
     :meth:`~.ReactionBot.process_reaction_commands` and
@@ -34,12 +37,21 @@ The default order in which everything is called and what methods call what:
 ReactionBotMixin
 ~~~~~~~~~~~~~~~~
 
-Can use this to add reaction commands for your own bot subclass.
+Can use this to add reaction commands for your own bot subclass. Just be sure
+nothing conflicts.
+
+.. code-block:: python
+
+    class OtherSubclassedBot(commands.Bot):
+        # stuff here
+
+    class SubclassedBot(ReactionBotMixin, OtherSubclassedBot):
+        pass
 
 .. note::
 
-    Probably subclass :class:`.ReactionBot` or :class:`.AutoShardedReactionBot`
-    instead of using this.
+    Probably use/subclass :class:`.ReactionBot` or :class:`.AutoShardedReactionBot`
+    instead.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionBotMixin
 
@@ -60,7 +72,7 @@ Woah look at you. Imagine having a bot big enough to use
     :members:
 
 ReactionCommand
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 ReactionCommand classes and other related stuff. Mostly behave like normal
 commands. Only big difference is :attr:`emojis <.ReactionCommand.emojis>`
@@ -79,6 +91,9 @@ Decorators for adding commands in cogs.
 
 Command Classes
 ~~~~~~~~~~~~~~~
+
+You can combine these with your own command/group subclasses just like
+:class:`.ReactionBotMixin`. Same as above, be careful about any conflicts.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionCommandMixin
 
@@ -103,10 +118,10 @@ ReactionGroup
 ReactionContext
 ^^^^^^^^^^^^^^^
 
-There's a lot of weird crap that goes on here is using raw methods. A
+There's a lot of weird crap that goes on here if using raw methods. A
 :class:`.ProxyBase` is used if anything from
 :class:`payload <discord.RawReactionActionEvent>` cannot be
-resolved to a matching object.
+resolved to a matching object from cache.
 
 Ex: A :class:`.ProxyMember` or :class:`.ProxyUser` may be used instead of
 :class:`discord.Member` or :class:`discord.User` if :meth:`~discord.Guild.get_member`
@@ -117,19 +132,19 @@ or :meth:`~discord.ext.commands.Bot.get_user` return ``None`` and
     :members:
 
 ReactionHelp
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
-Even comes with it's own default help command. If you want to customize it there's
+Even comes with a help command. If you want to customize it there's
 not really a simple way so you're basically subclassing help.
 
 .. autoclass:: discord.ext.reactioncommands.ReactionHelp
-  :members:
+    :members:
 
 
 Misc things
 ^^^^^^^^^^^
 
-Things that were small enough and didn't require a new page
+Things that were small enough and didn't want to make a new page
 
 Util functions
 ~~~~~~~~~~~~~~

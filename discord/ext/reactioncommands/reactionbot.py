@@ -1,5 +1,6 @@
 import time
 import asyncio
+import traceback
 from collections import Counter
 
 import discord
@@ -25,11 +26,11 @@ class ReactionBotMixin(ReactionGroupMixin):
         self.listen_total_timeout = listen_total_timeout
         self.active_ctx_sesssions = Counter()
         self.remove_reactions_after = remove_reactions_after
-        self.__debug = kwargs.get('_debug', False)
+        self._debug = kwargs.get('_debug', False)
+        self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
         kwargs.setdefault('help_command', ReactionHelp())
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
-        self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
     async def get_context(self, message, *, cls=commands.Context):
         """Functions exactly the same as original :meth:`~discord.ext.commands.Bot.get_context`.
@@ -144,21 +145,21 @@ class ReactionBotMixin(ReactionGroupMixin):
             return None
         return await self._get_x_emoji(payload, attr='listening_emoji', str_only=True)
 
-    async def reaction_invoke(self, ctx):
-        """Invokes a context
+        async def reaction_invoke(self, ctx):
+            """Invokes a context
 
-        Parameters
-        ----------
-        ctx: :class:`~.reactioncommands.ReactionContext`
-            context to invoke
-        """
-        self.loop.create_task(self.reaction_after_processing(ctx))
+            Parameters
+            ----------
+            ctx: :class:`~.reactioncommands.ReactionContext`
+                context to invoke
+            """
+            self.loop.create_task(self.reaction_after_processing(ctx))
 
-        try:
-            await self.invoke(ctx)
-        except Exception as e:
-            if self.__debug:
-                print(e)
+            try:
+                await self.invoke(ctx)
+            except Exception as e:
+                if self._debug:
+                    traceback.print_exc()
 
     async def get_reaction_context(self, reaction, user, *, cls=ReactionContext, check=None, event_type=None):
         """Creates a context from :class:`~discord.Reaction` and
@@ -328,7 +329,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         ctx: :class:`~discord.ext.reactioncommands.ReactionContext`
             the context to fill out
         check: Callable
-            check to be passed to :meth:`~disocrd.commands.ext.Bot.wait_for`
+            check to be passed to :meth:`~discord.commands.ext.Bot.wait_for`
 
         Returns
         -------
@@ -338,8 +339,8 @@ class ReactionBotMixin(ReactionGroupMixin):
         maybe_prefix = str(ctx.payload.emoji)
         command_emoji = await self.get_command_emoji(ctx.payload)
 
-        if (maybe_prefix == command_emoji) or
-                (isinstance(command_emoji, list) and maybe_prefix in command_emoji):
+        if (maybe_prefix == command_emoji or
+                (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
             ctx.prefix = maybe_prefix
         else:
             return ctx
@@ -364,8 +365,8 @@ class ReactionBotMixin(ReactionGroupMixin):
             ctx.invoked_with = invoker
             ctx.command = self.get_reaction_command(invoker)
         except Exception as e:
-            if self.__debug:
-                print(e)
+            if self._debug:
+                traceback.print_exc()
         return ctx
 
     async def _wait_for_emoji_stream(self, ctx, *, check=None):
@@ -546,3 +547,57 @@ class AutoShardedReactionBot(ReactionBotMixin, commands.AutoShardedBot):
     :class:`discord.ext.commands.AutoShardedBot`.
     """
     pass
+
+
+class _NoPrefixReactionBot(ReactionBotMixin, commands.Bot):
+    """Experimental no prefix reaction bot
+
+    Use at your own risk
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_command', ReactionHelp())
+        self._debug = kwargs.get('_debug', False)
+        super(ReactionBotMixin, self).__init__(*args, **kwargs)
+
+    async def _start_ctx_session(self, ctx, *, check=None):
+        """Sets attributes of ctx
+
+        Doesn't :meth:`~ReactionBot._wait_for_emoji_stream` or
+        :meth:`~ReactionBot.reaction_before_processing`.
+
+        Parameters
+        ----------
+        ctx: :class:`~discord.ext.reactioncommands.ReactionContext`
+            the context to fill out
+        check: Any
+            Ignored
+
+        Returns
+        -------
+        :class:`~discord.ext.reactioncommands.ReactionContext`
+            returns the ctx that was passed in with more attributes filled out
+        """
+        emoji = str(ctx.payload.emoji)
+        ctx.view = commands.view.StringView(emoji)
+        ctx.full_emojis = ctx.view.get_word()
+        ctx.invoked_with = emoji
+        ctx.prefix = ctx.listening_emoji = None
+        ctx.remove_after = ()
+        ctx.command = self.get_reaction_command(emoji)
+        return ctx
+
+    async def reaction_invoke(self, ctx):
+        """Invokes a context
+
+        Doesn't call :meth:`~ReactionBot.reaction_after_processing`
+        Parameters
+        ----------
+        ctx: :class:`~.reactioncommands.ReactionContext`
+            context to invoke
+        """
+        try:
+            await self.invoke(ctx)
+        except Exception as e:
+            if self._debug:
+                traceback.print_exc()

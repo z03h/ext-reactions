@@ -60,6 +60,8 @@ class ReactionHelp(commands.DefaultHelpCommand):
     def get_ending_note(self):
         """Modified to show different text based on reaction or message invoke"""
         ctx = self.context
+        if not ctx.prefix:
+            return ''
         if getattr(ctx, 'reaction_command', False):
             return "Bot that works with reactions and emojis"\
                    f"React with {ctx.prefix} to start a command\n" \

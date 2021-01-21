@@ -63,7 +63,7 @@ class ReactionHelp(commands.DefaultHelpCommand):
         if not ctx.prefix:
             return ''
         if getattr(ctx, 'reaction_command', False):
-            return "Bot that works with reactions and emojis"\
+            return "Bot that works with reactions and emojis\n"\
                    f"React with {ctx.prefix} to start a command\n" \
                    "Add reactions to get the command you want.\n" \
                    f"Remove {ctx.prefix} to start the command"
@@ -142,14 +142,14 @@ class ReactionHelp(commands.DefaultHelpCommand):
             :attr:`~ReactionBot.listening_emoji`.
         """
         if getattr(ctx, 'reaction_command', 'False'):
-            command = ctx.full_emojis.strip().partition(' ')[2] or None
             await self.prepare_help_command(ctx, command)
             bot = ctx.bot
 
-            if command is None:
+            keys = ctx.full_emojis.split()[1:]
+            if not keys:
                 mapping = self.get_bot_mapping()
                 return await self.send_bot_help(mapping)
-            keys = command.split(' ')
+
             cmd = bot.get_reaction_command(keys[0])
             if cmd is None:
                 string = await maybe_coro(self.command_not_found, self.remove_mentions(keys[0]))

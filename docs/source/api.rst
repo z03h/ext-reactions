@@ -14,11 +14,12 @@ The default order in which everything is called and what methods call what:
 
     - :meth:`get_raw_reaction_context(payload) <.ReactionBot.get_raw_reaction_context>`
 
-      - :meth:`reaction_before_processing(ctx) <.ReactionBot.reaction_before_processing>`
-
       - | ``_early_invoke``
         | checks if reaction is a command that can be invoked without prefix. If
-        | :attr:`~.ReactionCommand.invoke_without_prefix` is ``True``, skips ``_wait_for_emoji_stream``.
+        | :attr:`~.ReactionCommand.invoke_without_prefix` is ``True``, returns a
+        | valid ctx here instead of continuing.
+
+      - :meth:`reaction_before_processing(ctx) <.ReactionBot.reaction_before_processing>`
 
       - | ``_wait_for_emoji_stream``
         | uses ``wait_for`` for reactions and tries to find a command from them.

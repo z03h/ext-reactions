@@ -262,6 +262,6 @@ Code with comments that explain what some stuff does.
         await ctx.message.reply(text)
 
 
-    with open('definitelynotmytoken', 'r') as f:
+    with open('definitely-not-my-token', 'r') as f:
         token = f.read()
     bot.run(token)

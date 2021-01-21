@@ -9,6 +9,8 @@ I'll finish this eventually and ~~document it somewhere maybe~~.
 
 [![PYPI](https://img.shields.io/pypi/v/ext-reactions.svg)](https://pypi.org/project/ext-reactions/) 😄
 
+[![Github](https://img.shields.io/github/last-commit/z03h/ext-reactions.svg)](https://github.com/z03h/ext-reactions) 😄
+
 ```python
 # install with pip
 python3 -m pip install ext-reactions
@@ -42,7 +44,7 @@ bot = reactioncommands.ReactionBot(command_prefix='!',
 async def ping(ctx):
     await ctx.send('Pong!')
 
-with open('definitelynotmytoken', 'r') as f:
+with open('definitely-not-my-token', 'r') as f:
     token = f.read()
 
 bot.run(token)

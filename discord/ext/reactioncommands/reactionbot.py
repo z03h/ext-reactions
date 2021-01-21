@@ -26,7 +26,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         self.listen_total_timeout = listen_total_timeout
         self.active_ctx_sesssions = Counter()
         self.remove_reactions_after = remove_reactions_after
-        self._debug = kwargs.get('_debug', False)
+        self._debug_ = kwargs.get('_debug', False)
         self._mc = commands.MaxConcurrency(1, per=commands.BucketType.user, wait=False)
 
         kwargs.setdefault('help_command', ReactionHelp())
@@ -316,24 +316,27 @@ class ReactionBotMixin(ReactionGroupMixin):
         :class:`~discord.ext.reactioncommands.ReactionContext`
             returns the ctx that was passed in with attributes filled out
         """
-        if not await self.reaction_before_processing(ctx):
-            return ctx
+        # if there's an active sessions already, return
         maybe_prefix = str(ctx.payload.emoji)
-        if self._early_invoke(ctx, maybe_prefix):
-            self.loop.create_task(self.reaction_after_processing(ctx))
-            return ctx
+
         command_emoji = await self.get_command_emoji(ctx.payload)
 
         if (maybe_prefix == command_emoji or
                 (isinstance(command_emoji, list) and maybe_prefix in command_emoji)):
             ctx.prefix = maybe_prefix
         else:
+            # try to check if it's a command
+            # that can be invoked without prefix
+            if await self.reaction_before_processing(ctx, check_only=True):
+                self._early_invoke(ctx, maybe_prefix)
             return ctx
         try:
+            if not await self.reaction_before_processing(ctx):
+                return ctx
             self.active_ctx_sesssions[ctx.message.id] += 1
             try:
                 emojis = await asyncio.wait_for(self._wait_for_emoji_stream(ctx, check=check),
-                                                           timeout=self.listen_total_timeout)
+                                                timeout=self.listen_total_timeout)
             except asyncio.TimeoutError:
                 emojis = ''
 
@@ -341,13 +344,14 @@ class ReactionBotMixin(ReactionGroupMixin):
 
             self.loop.create_task(self.reaction_after_processing(ctx))
 
-            ctx.view = commands.view.StringView(emojis or '')
+            ctx.view = commands.view.StringView(emojis)
             ctx.full_emojis = emojis
+            ctx.view.skip_ws()
             invoker = ctx.view.get_word()
             ctx.invoked_with = invoker
             ctx.command = self.get_reaction_command(invoker)
         except Exception as e:
-            if self._debug:
+            if self._debug_:
                 traceback.print_exc()
         return ctx
 
@@ -359,6 +363,9 @@ class ReactionBotMixin(ReactionGroupMixin):
         ----------
         ctx: :class:`~discord.ext.reactioncommands.ReactionContext`
             ctx that started this listening
+        check: Callable
+            check to be passed to ``wait_for` that listens to
+            ``raw_reaction_add`` and ``raw_reaction_remove``
 
         Returns
         -------
@@ -429,7 +436,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         for future in (pending or []):
             future.cancel()
 
-    async def reaction_before_processing(self, ctx):
+    async def reaction_before_processing(self, ctx, *, check_only=False):
         """Method that is called after verifying the command emoji and before
         the command input is added by the user. Determines if the bot should
         listen to reactions. :attr:`.ReactionBot.listening_emoji` is added here.
@@ -437,13 +444,16 @@ class ReactionBotMixin(ReactionGroupMixin):
         .. note::
             This method prevents users from starting multiple listening sessions
             and has some cleanup that is done in :meth:`.reaction_after_processing`.
-            If you overwrite one you should probably overwrite the other or call
+            If you overwrite one you should probably overwrite the other /call
             ``super()``.
 
         Parameters
         ----------
         ctx: :class:`~.reactioncommands.ReactionContext`
             Context that may be invoked.
+        check_only: :class:`bool`
+            Whether this should be standalone call without an expected matching
+            :meth:`~ReactionBot.reaction_after_processing` call. Default ``False``.
 
         Returns
         -------
@@ -454,7 +464,11 @@ class ReactionBotMixin(ReactionGroupMixin):
             await self._mc.acquire(ctx)
         except commands.MaxConcurrencyReached:
             return False
-        #add support for callable here
+        else:
+            if check_only:
+                await self._mc.release(ctx)
+                return True
+
         listening_emoji = await self.get_listening_emoji(ctx.payload)
         ctx.listening_emoji = listening_emoji
         if listening_emoji is not None:
@@ -472,7 +486,7 @@ class ReactionBotMixin(ReactionGroupMixin):
 
         .. note::
             This method cleans up after :meth:`.reaction_before_processing`.
-            If you overwrite one you should probably overwrite the other or call
+            If you overwrite one you should probably overwrite the other/call
             ``super()``.
 
         Parameters
@@ -487,17 +501,14 @@ class ReactionBotMixin(ReactionGroupMixin):
             except:
                 can_remove = False
             for emoji, user in ctx.remove_after:
-                if user == self.user:
-                    if not (emoji == ctx.listening_emoji and self.active_ctx_sesssions[ctx.message.id]):
-                        try:
+                try:
+                    if user == self.user:
+                        if not (emoji == ctx.listening_emoji and self.active_ctx_sesssions[ctx.message.id]):
                             await ctx.message.remove_reaction(emoji, self.user)
-                        except Exception:
-                            pass
-                elif can_remove:
-                    try:
+                    elif can_remove:
                         await ctx.message.remove_reaction(emoji, user)
-                    except Exception:
-                        pass
+                except discord.HTTPException:
+                    pass
             if not self.active_ctx_sesssions[ctx.message.id]:
                 try:
                     del self.active_ctx_sesssions[ctx.message.id]

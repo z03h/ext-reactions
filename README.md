@@ -7,9 +7,9 @@ I'll finish this eventually and ~~document it somewhere maybe~~.
 [![Documentation Status](https://readthedocs.org/projects/extreactions/badge/?version=latest)](https://extreactions.readthedocs.io/en/latest/?badge=latest)
 [Nice, docs are here](https://extreactions.readthedocs.io/en/latest/) 😄
 
-[![PYPI](https://img.shields.io/pypi/v/ext-reactions.svg)](https://pypi.org/project/ext-reactions/) 😄
+[![PYPI](https://img.shields.io/pypi/v/ext-reactions)](https://pypi.org/project/ext-reactions/) 😄
 
-[![Github](https://img.shields.io/github/last-commit/z03h/ext-reactions.svg)](https://github.com/z03h/ext-reactions) 😄
+[![Github](https://img.shields.io/github/last-commit/z03h/ext-reactions)](https://github.com/z03h/ext-reactions) 😄
 
 ```python
 # install with pip

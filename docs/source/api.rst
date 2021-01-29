@@ -16,8 +16,7 @@ The default order in which everything is called and what methods call what:
 
       - | ``_early_invoke``
         | checks if reaction is a command that can be invoked without prefix. If
-        | :attr:`~.ReactionCommand.invoke_without_prefix` is ``True``, returns a
-        | valid ctx here instead of continuing.
+        | :attr:`~.ReactionCommand.invoke_without_prefix` is ``True``, returns a valid ctx here instead of continuing.
 
       - :meth:`reaction_before_processing(ctx) <.ReactionBot.reaction_before_processing>`
 

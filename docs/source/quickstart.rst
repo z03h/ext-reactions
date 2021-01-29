@@ -25,15 +25,15 @@ Create a :class:`~.ReactionBot`
 
 .. code-block:: python
 
-    bot = reactioncommands.ReactionBot(prefix, command_emoji, listening_emoji)
+    bot = reactioncommands.ReactionBot(prefix, prefix_emoji, listening_emoji)
 
-- :attr:`~.ReactionBot.command_emoji`: Similar to ``command_prefix`` but for
+- :attr:`~.ReactionBot.prefix_emoji`: Similar to ``command_prefix`` but for
   reaction commands. Will start a "listening session" where the bot listens for
   raw reaction add/remove with :meth:`~discord.ext.commands.Bot.wait_for` and finds
   the matching command from the emojis added/removed.
 
 - :attr:`~.ReactionBot.listening_emoji` If set, this emoji will be added after
-  the user reacts with the :attr:`~.ReactionBot.command_emoji` to let the user know
+  the user reacts with the :attr:`~.ReactionBot.prefix_emoji` to let the user know
   the "listening session" has started. Also used for invoking subcommands.
 
 Use decorators to add commands
@@ -71,7 +71,7 @@ Simple command
     from discord.ext import reactioncommands
 
     bot = reactioncommands.ReactionBot(command_prefix="!",
-                                       command_emoji="🤔"),
+                                       prefix_emoji="🤔"),
                                        listening_emoij="👀",
                                        listen_timeout=30
                                        )
@@ -157,7 +157,7 @@ Case insensitive
     from discord.ext import reactioncommands
 
     bot = reactioncommands.ReactionBot(command_prefix="!",
-                                       command_emoji="🤔"),
+                                       prefix_emoji="🤔"),
                                        listening_emoij="👀",
                                        case_insensitive=True
                                        )
@@ -166,6 +166,32 @@ Case insensitive
     @bot.reaction_command("👍")
     async def hi(ctx):
         await ctx.send(f"Send that {ctx.invoked_with} {ctx.author} 👍👍👍")
+
+Commands without emoji prefix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # invoke_without_prefix=True means this command will be invoked for any
+    # 👋 reaction. Be careful when using this.
+    @bot.reaction_command("👋", invoke_without_prefix=True)
+    async def hi(ctx):
+        await ctx.reply(f"{ctx.author} says hi 👋👋👋")
+
+Limited custom emoji support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Doesn't seem like a good way to do this currently. Better custom
+    emoji support will probably require a rewrite.
+
+.. code-block:: python
+
+    # Must use the full <:name:id> format.
+    # Breaks if the emoji ever changes name and becomes unusable if the emoji
+    # is deleted.
+    @bot.reaction_command("<:python:596577462335307777>")
+    async def python(ctx):
+        await ctx.send("Python is fun")
 
 Anyways, here's a huge wall of example code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -184,7 +210,7 @@ Code with comments that explain what some stuff does.
 
 
     # 'prefix ' is the normal command_prefix for message commands.
-    # '🤔' is the reaction prefix. It must be added to start listening for command emojis.
+    # '🤔' is the reaction prefix. It must be added to start listening for prefix emojis.
     # A user can only have 1 listening session at once.
     # If they mess up the command they must end the session by removing
     # 🤔(reaction prefix) and adding the reaction prefix again.
@@ -192,7 +218,7 @@ Code with comments that explain what some stuff does.
     # reaction events and for separating groups from subcommands.
     bot = reactioncommands.ReactionBot('prefix ', '🤔', '👀',
                                        intents=intents)
-    # command_emoji and listening_emoji support callables like `get_emoji_prefix(bot, payload)`
+    # prefix_emoji and listening_emoji support callables like `get_emoji_prefix(bot, payload)`
     # All the normal Bot kwargs will work also.
 
 

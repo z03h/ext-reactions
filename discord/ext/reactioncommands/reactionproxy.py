@@ -124,10 +124,11 @@ class ProxyPayload:
         event_type: Any
             Defaults to ``None``
         """
+        author = author or message.author
         return cls(channel_id=message.channel.id,
                    message_id=message.id,
                    guild_id=getattr(message.guild, 'id', None),
-                   member=author or message.author,
+                   member=author,
                    user_id=author.id,
                    emoji=emoji,
                    event_type=event_type
@@ -187,6 +188,7 @@ class ProxyMessage:
     @classmethod
     def from_payload(cls, bot, payload):
         """Classmethod to create a :class:`.ProyMessage` from a payload.
+        For use with raw reaction methods
 
         Parameters
         ----------
@@ -197,3 +199,18 @@ class ProxyMessage:
         """
         author, channel, guild = bot._create_proxies(payload)
         return cls(payload.message_id, author, channel, guild)
+
+    @classmethod
+    def from_reaction_user(cls, reaction, user):
+        """Classmethod to create a :class:`.ProxyMessage` from
+        a reaction and user. For use with on reaction methods
+
+        Parameters
+        ----------
+        reaction: :class:`discord.Reaction`
+            reaction
+        user: Union[:class:`discord.Member`, :class:`discord.User`]
+            user
+        """
+        msg = reaction.message
+        return cls(msg.id, user, msg.channel, msg.guild)

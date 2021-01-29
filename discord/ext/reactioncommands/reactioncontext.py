@@ -6,8 +6,6 @@ __all__ = ('ReactionContext',)
 class ReactionContext(commands.Context):
     """It's a context, ye...
 
-    I do some f**ked up sh*t here so.
-
     Attributes
     ----------
     author: Union[:class:`discord.Member`, :class:`discord.User`, :class:`.ProxyBase`]

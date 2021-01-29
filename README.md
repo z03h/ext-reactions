@@ -36,7 +36,7 @@ intents.members = True
 
 
 bot = reactioncommands.ReactionBot(command_prefix='!',
-                                   command_emoji='🤔',
+                                   prefix_emoji='🤔',
                                    listening_emoji='👀',
                                    intents=intents)
 

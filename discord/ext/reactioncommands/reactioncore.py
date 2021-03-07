@@ -389,6 +389,13 @@ class ReactionGroup(ReactionGroupMixin, ReactionCommandMixin, commands.Group):
         modifiers when being invoked.
 
         Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍 or 🧙‍♂️/🧙‍♀️ --> 🧙
+    invoke_without_prefix: :class:`bool`
+        Whether the command can be invoked without :attr:`ReactionBot.command_emoji`.
+        Defaults to ``False``.
+
+        .. note::
+            Can get a lot of unwanted command invokes with this set to ``True``.
+            Be careful.
     """
     async def invoke(self, ctx):
         is_reaction = getattr(ctx, 'reaction_command', False)

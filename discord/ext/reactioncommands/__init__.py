@@ -6,4 +6,4 @@ from .reactionproxy import *
 from .reactionerrors import *
 from .reactioncontext import *
 
-__version__ = "0.2.0"
+__version__ = "0.3.0a"

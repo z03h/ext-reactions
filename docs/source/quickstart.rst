@@ -187,8 +187,8 @@ Limited custom emoji support
 .. code-block:: python
 
     # Must use the full <:name:id> format.
-    # Breaks if the emoji ever changes name and becomes unusable if the emoji
-    # is deleted.
+    # Breaks if the emoji ever changes name and
+    # becomes unusable if the emoji is deleted.
     @bot.reaction_command("<:python:596577462335307777>")
     async def python(ctx):
         await ctx.send("Python is fun")

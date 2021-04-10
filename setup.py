@@ -1,7 +1,7 @@
 import re
 from setuptools import setup
 
-requirements = ["discord.py>=1.6.0,<1.7.0"]
+requirements = ["discord.py>=1.6.0,<2.0.0"]
 
 version = ''
 with open('discord/ext/reactioncommands/__init__.py') as f:

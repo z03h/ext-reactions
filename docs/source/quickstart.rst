@@ -39,7 +39,7 @@ Create a :class:`~.ReactionBot`
 Use decorators to add commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :meth:`~discord.ext.reactioncommands.ReactionBot.reaction_command>`
+- :meth:`~discord.ext.reactioncommands.ReactionBot.reaction_command`
 - :meth:`~discord.ext.reactioncommands.ReactionBot.reaction_group`
 
 .. code-block:: python
@@ -106,7 +106,7 @@ Multiple emojis or aliases
 
 .. code-block:: python
 
-    @bot.reaction_command("👋👋👋👋👋"])
+    @bot.reaction_command("👋👋👋👋👋")
     async def bye(ctx):
         await ctx.send("👋*5")
 

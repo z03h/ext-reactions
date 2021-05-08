@@ -1,4 +1,4 @@
-discord.py>=1.6.0, <1.7.0
+discord.py>=1.7.2,<=2.1.0
 git+https://github.com/z03h/ext-reactions@master
 sphinx==3.4.3
 sphinx-rtd-theme==0.5.1

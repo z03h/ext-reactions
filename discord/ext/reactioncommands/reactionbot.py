@@ -82,7 +82,7 @@ class ReactionBotMixin(ReactionGroupMixin):
         if not isinstance(ret, str):
             if single:
                 raise TypeError(f"{attr} must be plain string, or None"
-                                "returning either of these, not {}".format(ret.__class__.__name__))
+                                f"returning either of these, not {ret.__class__.__name__}")
             try:
                 ret = list(ret)
             except TypeError:
@@ -92,7 +92,7 @@ class ReactionBotMixin(ReactionGroupMixin):
                     raise
 
                 raise TypeError(f"{attr} must be plain string, iterable of strings, or callable "
-                                "returning any of these, not {}".format(ret.__class__.__name__))
+                                f"returning either of these, not {ret.__class__.__name__}")
 
             if not ret:
                 raise ValueError(f"Iterable {name} must contain at least one prefix")
@@ -555,10 +555,9 @@ class ReactionBot(ReactionBotMixin, commands.Bot):
         remove_reactions_after: Optional[:class:`bool`]
             Whether the bot should remove its own reactions.
             Default value is ``True``.
-        case_insensitive: Optional[:class:`bool`]
-            In addition to making normal commands case insensitive, attempts to
-            normalize emojis by removing different skin colored and gendered
-            modifiers when being invoked.
+        emoji_insensitive: Optional[:class:`bool`]
+            Attempts to normalize emojis by removing different skin colored and
+            gendered modifiers when being invoked.
 
             Ex: 👍🏿/👍🏾/👍🏽/👍🏼/👍🏻 --> 👍
 

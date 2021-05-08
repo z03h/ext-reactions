@@ -1,7 +1,7 @@
 import re
 from setuptools import setup
 
-requirements = ["discord.py>=1.6.0,<2.0.0"]
+requirements = ["discord.py>=2.0.0,<2.1.0"]
 
 version = ''
 with open('discord/ext/reactioncommands/__init__.py') as f:
@@ -40,5 +40,5 @@ setup(name='ext-reactions',
       license='MIT',
       description='discord.py extension that adds reaction commands',
       install_requires=requirements,
-      python_requires='>=3.6.4'
+      python_requires='>=3.8'
 )

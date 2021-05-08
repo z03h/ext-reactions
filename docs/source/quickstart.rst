@@ -159,7 +159,7 @@ Case insensitive
     bot = reactioncommands.ReactionBot(command_prefix="!",
                                        prefix_emoji="🤔"),
                                        listening_emoij="👀",
-                                       case_insensitive=True
+                                       emoji_insensitive=True
                                        )
 
     # can be invoked with any of 👍,👍🏻,👍🏼,👍🏽,👍🏾,👍🏿
@@ -241,10 +241,10 @@ Code with comments that explain what some stuff does.
     # +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > -👍🏾 > +👍🏾
     # 👀 (listening_emoji) separates parent reactions from subcommand reactions
 
-    # case_insensitive will try to ignore different skin color/gender modifiers.
+    # emoji_insensitive will try to ignore different skin color/gender modifiers.
     # You can also invoke the subcommand with:
     # +🤔(prefix) > +👍🏾 > +👀(listen for subcommand) > +👍 > -👍
-    @bot.reaction_group('👍🏾', case_insensitive=True)
+    @bot.reaction_group('👍🏾', emoji_insensitive=True)
     async def parent(ctx):
         await ctx.send(f'In parent command **{ctx.command}**!\n' \
                        '{ctx.invoked_subcommand.name=}\n' \

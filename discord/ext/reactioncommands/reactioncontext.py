@@ -64,6 +64,7 @@ class ReactionContext(commands.Context):
         self.remove_after = []
         self.listening_emoji = None
         self.full_emojis = ''
+        self.invoked_parents = []
         # need to separate ctx.author from ctx.message.author
         # since they can be different users
         self.author = author

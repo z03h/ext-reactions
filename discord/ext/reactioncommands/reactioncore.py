@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.converter import get_converter
 
 from .utils import scrub_emojis
 from .reactionerrors import ReactionOnlyCommand
@@ -17,26 +18,23 @@ class _EmojiInsensitiveDict(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _clean(self, k):
-        return scrub_emojis(k)
-
     def __contains__(self, k):
-        return super().__contains__(self._clean(k))
+        return super().__contains__(scrub_emojis(k))
 
     def __delitem__(self, k):
-        return super().__delitem__(self._clean(k))
+        return super().__delitem__(scrub_emojis(k))
 
     def __getitem__(self, k):
-        return super().__getitem__(self._clean(k))
+        return super().__getitem__(scrub_emojis(k))
 
     def get(self, k, default=None):
-        return super().get(self._clean(k), default)
+        return super().get(scrub_emojis(k), default)
 
     def pop(self, k, default=None):
-        return super().pop(self._clean(k), default)
+        return super().pop(scrub_emojis(k), default)
 
     def __setitem__(self, k, v):
-        super().__setitem__(self._clean(k), v)
+        super().__setitem__(scrub_emojis(k), v)
 
 
 class ReactionCommandMixin:
@@ -93,9 +91,9 @@ class ReactionCommandMixin:
             Whether or not the command can run.
         """
         if not self.enabled:
-            raise commands.DisabledCommand('{0.name} command is disabled'.format(self))
+            raise commands.DisabledCommand(f'{self.name} command is disabled')
         if not getattr(ctx, 'reaction_command', False) and not self.invoke_with_message:
-            raise ReactionOnlyCommand('{0.name} command is only usable with reactions'.format(self))
+            raise ReactionOnlyCommand(f'{self.name} command is only usable with reactions')
         return await super().can_run(ctx)
 
     async def _parse_arguments(self, ctx):
@@ -125,18 +123,21 @@ class ReactionCommandMixin:
                 try:
                     next(iterator)
                 except StopIteration:
-                    fmt = 'Callback for {0.name} command is missing "self" parameter.'
-                    raise discord.ClientException(fmt.format(self))
+                    raise discord.ClientException(f'Callback for {self.name} command is missing "self" parameter.')
+
 
             # next we have the 'ctx' as the next parameter
             try:
                 next(iterator)
             except StopIteration:
-                fmt = 'Callback for {0.name} command is missing "ctx" parameter.'
-                raise discord.ClientException(fmt.format(self))
+                raise discord.ClientException(f'Callback for {self.name} command is missing "ctx" parameter.')
 
             for name, param in iterator:
-                arg = None if param.default is param.empty else param.default
+                converter = get_converter(param)
+                if hasattr(converter, '__commands_is_flag__'):
+                    arg = (await converter._construct_default(ctx)) if converter._can_be_constructible() else None
+                else:
+                    arg = None if param.default is param.empty else param.default
                 if param.kind == param.KEYWORD_ONLY:
                     kwargs[name] = arg
                 else:
@@ -153,7 +154,7 @@ class ReactionGroupMixin:
 
     Parameters
     ----------
-    case_insensitive: Optional[:class:`bool`]
+    emoji_insensitive: Optional[:class:`bool`]
         In addition to making normal commands case insensitive, attempts to
         normalize emojis by removing different skin colored and gendered
         modifiers when being invoked.
@@ -162,7 +163,7 @@ class ReactionGroupMixin:
     """
 
     def __init__(self, *args, **kwargs):
-        self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('case_insensitive') else {}
+        self.emoji_mapping = _EmojiInsensitiveDict() if kwargs.get('emoji_insensitive') else {}
         super().__init__(*args, **kwargs)
 
     @property

@@ -62,15 +62,16 @@ class ReactionHelp(commands.DefaultHelpCommand):
         ctx = self.context
         if not ctx.prefix:
             return ''
+        prefix = ctx.clean_prefix
         if getattr(ctx, 'reaction_command', False):
             return "Bot that works with reactions and emojis\n"\
-                   f"React with {ctx.prefix} to start a command\n" \
+                   f"React with {prefix} to start a command\n" \
                    "Add reactions to get the command you want.\n" \
-                   f"Remove {ctx.prefix} to start the command"
+                   f"Remove {prefix} to start the command"
         else:
             command_name = self.invoked_with
-            return "Type {0}{1} command for more info on a command.\n" \
-                   "You can also type {0}{1} category for more info on a category.".format(self.clean_prefix, command_name)
+            return f"Type {prefix}{command_name} command for more info on a command.\n" \
+                   f"You can also type {prefix}{command_name} category for more info on a category."
 
     def get_command_signature(self, command):
         """Modified to add :attr:`ReactionCommand.emojis` to the signature
@@ -78,7 +79,7 @@ class ReactionHelp(commands.DefaultHelpCommand):
         """
         parent = command.full_parent_name
         alias = command.name if not parent else parent + ' ' + command.name
-        prefix = '' if getattr(self.context, "reaction_command", False) else self.clean_prefix
+        prefix = '' if getattr(self.context, "reaction_command", False) else self.context.clean_prefix
 
         if getattr(command, "emojis", []):
             emojis = ','.join(map(self.filter_regional, command.emojis)) +'\n'
